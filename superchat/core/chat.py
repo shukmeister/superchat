@@ -41,9 +41,10 @@ class ChatSession:
         # Skip API key validation since it was already checked at startup
         model_client = self.model_client_manager.create_model_client(self.model_name, skip_validation=True)
         
-        # Create AutoGen assistant agent
+        # Create AutoGen assistant agent (replace hyphens for valid Python identifier)
+        safe_name = self.model_name.replace("-", "_")
         self.assistant = AssistantAgent(
-            name=f"assistant_{self.model_name}",
+            name=f"assistant_{safe_name}",
             model_client=model_client,
             system_message=self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely."
         )
@@ -77,6 +78,7 @@ class ChatSession:
                     
                 if parsed['type'] == 'command':
                     if parsed['command'] == 'exit':
+                        print()
                         print("Terminating connection")
                         break
                     else:
@@ -85,10 +87,15 @@ class ChatSession:
                         
                 # Handle regular messages
                 if parsed['type'] == 'message':
+                    print()  # Add line break after user message
                     try:
-                        print("Thinking...")
                         response = await self._send_message_async(parsed['message'])
-                        print(f"\n{response}\n")
+                        model_config = self.model_client_manager.get_model_config(self.model_name)
+                        if model_config:
+                            model = model_config.get("model", self.model_name)
+                            print(f"[{model}]: {response}\n")
+                        else:
+                            print(f"[{self.model_name}]: {response}\n")
                     except Exception as e:
                         print(f"Error: {e}\n")
                     

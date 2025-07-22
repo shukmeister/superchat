@@ -57,10 +57,8 @@ def setup_loop():
     # Get available models
     available_models = model_manager.get_available_models()
     
-    display_session_info(config)
-    
-    print("Setup Mode - Configure your chat session")
-    print("Commands: /model, /list, /start, /help, /exit")
+    print("Configure your session before starting")
+    print("Type /help for commands")
     print()
     
     while True:
@@ -83,6 +81,7 @@ def setup_loop():
             
             if command == "exit":
                 print()
+                print()
                 print("Terminating connection")
                 return None
                 
@@ -99,6 +98,7 @@ def setup_loop():
                     print("Use /model to select a single model or wait for multi-agent support.")
                     print()
                     continue
+                print()  # Add line break after /start command
                 config.start_session()
                 return config
                 
@@ -124,7 +124,7 @@ def setup_loop():
                         full_name = f"{family} {model} {version}".strip()
                         input_cost = model_config.get("input_cost", "N/A")
                         output_cost = model_config.get("output_cost", "N/A")
-                        print(f"  {model_name} - {full_name} (${input_cost}/${output_cost} per 1M tokens)")
+                        print(f"  {full_name} (${input_cost}/${output_cost} per 1M tokens)")
                     else:
                         print(f"  {model_name} - {model_name}")
                 print()
@@ -133,19 +133,32 @@ def setup_loop():
                 if len(args) < 1:
                     print()
                     print("Usage: /model <name>")
-                    print(f"Available models: {', '.join(available_models)}")
+                    print("Available models: K2, V3, R1")
                     print()
                     continue
-                model_name = args[0]
-                if model_name not in available_models:
+                user_input = args[0]
+                
+                # Try to find model by model name field first, then by key
+                model_key = None
+                for key in available_models:
+                    model_config = model_manager.get_model_config(key)
+                    if model_config and model_config.get("model", "").lower() == user_input.lower():
+                        model_key = key
+                        break
+                
+                # If not found by model name, try direct key match
+                if not model_key and user_input in available_models:
+                    model_key = user_input
+                
+                if not model_key:
                     print()
-                    print(f"Unknown model: {model_name}")
-                    print(f"Available models: {', '.join(available_models)}")
+                    print(f"Unknown model: {user_input}")
+                    print("Available models: K2, V3, R1")
                     print()
                     continue
-                if config.add_model(model_name):
+                if config.add_model(model_key):
                     print()
-                    model_config = model_manager.get_model_config(model_name)
+                    model_config = model_manager.get_model_config(model_key)
                     if model_config:
                         family = model_config.get("family", "")
                         model = model_config.get("model", "")
@@ -153,11 +166,11 @@ def setup_loop():
                         full_name = f"{family} {model} {version}".strip()
                         print(f"Added model: {full_name}")
                     else:
-                        print(f"Added model: {model_name}")
+                        print(f"Added model: {model_key}")
                     display_session_info(config)
                 else:
                     print()
-                    print(f"Model {model_name} already selected")
+                    print(f"Model {model_key} already selected")
                     print()
                     
             else:

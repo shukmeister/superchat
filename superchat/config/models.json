@@ -1,6 +1,6 @@
 {
   "models": {
-    "kimi": {
+    "kimi-k2": {
       "family": "Kimi",
       "model": "K2",
       "version": "",
@@ -17,7 +17,7 @@
         "structured_output": false
       }
     },
-    "deepseek": {
+    "deepseek-v3": {
       "family": "DeepSeek",
       "model": "V3",
       "version": "0324",
