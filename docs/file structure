@@ -1,0 +1,15 @@
+file structure
+
+superchat/
+├── docs/
+│   ├── _requirements.md
+│   ├── roadmap.txt  
+├── README.md
+├── requirements.txt
+├── setup.py
+├── superchat/
+│   ├── core/
+│   ├── ui/
+│   ├── models/
+│   ├── utils/
+│   └── config.py            # Configuration constants
