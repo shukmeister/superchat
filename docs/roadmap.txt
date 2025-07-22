@@ -57,3 +57,7 @@ Other
 - Add more info to session, spruce it up
 - Make it more readable
 - Make default > and then during chat >>
+- add costs to the models
+- Modify the provider route requests to get the best models: https://openrouter.ai/docs/features/provider-routing
+- Add a version of superchat output to the beginning of the, output version on /status
+- output temperature, thinking mode in /status, voice also

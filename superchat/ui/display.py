@@ -15,6 +15,7 @@ and hands them off to the chat system once everything is configured properly.
 """
 
 from superchat.utils.parser import parse_input
+from superchat.utils.identifiers import get_model_identifier
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 
@@ -29,17 +30,6 @@ def display_banner():
                                                                                 
 """
     print(banner)
-
-def display_session_info(config):
-    """Display current session configuration."""
-    print("Session Configuration:")
-    
-    if config.models:
-        print(f"  Models: {', '.join(config.models)}")
-    else:
-        print("  Models: None selected")
-    
-    print()
 
 def setup_loop():
     """Main setup loop for configuring chat parameters."""
@@ -63,7 +53,7 @@ def setup_loop():
     
     while True:
         try:
-            user_input = input(">> ")
+            user_input = input("> ")
             parsed = parse_input(user_input)
             
             if parsed['type'] == 'empty':
@@ -107,6 +97,7 @@ def setup_loop():
                 print("Available commands:")
                 print("  /model <name> - Add a model to the chat")
                 print("  /list - Show available models")
+                print("  /status - Show current configuration")
                 print("  /start - Begin the chat session")
                 print("  /help - Show this help")
                 print("  /exit - Exit superchat")
@@ -115,6 +106,7 @@ def setup_loop():
             elif command == "list":
                 print()
                 print("Available models:")
+                print()
                 for model_name in available_models:
                     model_config = model_manager.get_model_config(model_name)
                     if model_config:
@@ -124,9 +116,46 @@ def setup_loop():
                         full_name = f"{family} {model} {version}".strip()
                         input_cost = model_config.get("input_cost", "N/A")
                         output_cost = model_config.get("output_cost", "N/A")
-                        print(f"  {full_name} (${input_cost}/${output_cost} per 1M tokens)")
+                        context_length = model_config.get("context_length", "N/A")
+                        
+                        # Format context length 
+                        if context_length != "N/A":
+                            if context_length >= 1000:
+                                context_str = f"{context_length // 1000}k tokens"
+                            else:
+                                context_str = f"{context_length} tokens"
+                        else:
+                            context_str = "N/A"
+                        
+                        print(f"- {full_name}:")
+                        print(f"    Input   ${input_cost}/M")
+                        print(f"    Output  ${output_cost}/M")
+                        print(f"    Context {context_str}")
+                        print()
                     else:
-                        print(f"  {model_name} - {model_name}")
+                        print(f"- {model_name}")
+                        print()
+                print()
+                
+            elif command == "status":
+                print()
+                print("Configuration:")
+                print()
+                if config.models:
+                    for i, model_key in enumerate(config.models):
+                        slot_num = i + 1
+                        identifier = get_model_identifier(i)
+                        model_config = model_manager.get_model_config(model_key)
+                        if model_config:
+                            family = model_config.get("family", "")
+                            model = model_config.get("model", "")
+                            version = model_config.get("version", "")
+                            full_name = f"{family} {model} {version}".strip()
+                            print(f"- Model {identifier}: {full_name}")
+                        else:
+                            print(f"- Model {identifier}: {model_key}")
+                else:
+                    print("  No models selected")
                 print()
                 
             elif command == "model":
@@ -165,9 +194,10 @@ def setup_loop():
                         version = model_config.get("version", "")
                         full_name = f"{family} {model} {version}".strip()
                         print(f"Added model: {full_name}")
+                        print()
                     else:
                         print(f"Added model: {model_key}")
-                    display_session_info(config)
+                        print()
                 else:
                     print()
                     print(f"Model {model_key} already selected")

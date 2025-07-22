@@ -19,6 +19,7 @@ from autogen_agentchat.agents import AssistantAgent
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.parser import parse_input
+from superchat.utils.identifiers import get_model_identifier
 
 
 class ChatSession:
@@ -82,7 +83,9 @@ class ChatSession:
                         print("Terminating connection")
                         break
                     else:
+                        print()
                         print(f"Unknown command: /{parsed['command']}")
+                        print()
                         continue
                         
                 # Handle regular messages
@@ -93,7 +96,10 @@ class ChatSession:
                         model_config = self.model_client_manager.get_model_config(self.model_name)
                         if model_config:
                             model = model_config.get("model", self.model_name)
-                            print(f"[{model}]: {response}\n")
+                            # Get Russian letter identifier
+                            model_index = self.config.models.index(self.model_name) if self.model_name in self.config.models else 0
+                            identifier = get_model_identifier(model_index)
+                            print(f"{identifier} [{model}]: {response}\n")
                         else:
                             print(f"[{self.model_name}]: {response}\n")
                     except Exception as e:

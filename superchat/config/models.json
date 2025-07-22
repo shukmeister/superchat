@@ -39,8 +39,8 @@
       "model": "R1",
       "version": "0528",
       "openrouter_id": "deepseek/deepseek-r1-0528",
-      "input_cost": 0.272,
-      "output_cost": 0.272,
+      "input_cost": 0.40,
+      "output_cost": 2.0,
       "context_length": 163840,
       "creation_date": "2025-05-28",
       "model_info": {
