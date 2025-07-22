@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from superchat.ui.display import setup_loop
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -28,7 +29,18 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
     
-    print("superchat CLI stub - args:", args)
+    # If CLI args provided, skip setup loop (future milestone)
+    if args.model:
+        print("CLI mode not yet implemented - using setup mode")
+    
+    # Enter setup loop
+    config = setup_loop()
+    
+    if config is None:
+        return 0
+    
+    print(f"Starting chat with config: {config}")
+    # Chat loop will be implemented in next tasks
     
     return 0
 
