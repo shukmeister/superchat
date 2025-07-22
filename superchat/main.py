@@ -3,6 +3,7 @@
 import argparse
 import sys
 from superchat.ui.display import setup_loop
+from superchat.core.chat import ChatSession
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -39,8 +40,9 @@ def main():
     if config is None:
         return 0
     
-    print(f"Starting chat with config: {config}")
-    # Chat loop will be implemented in next tasks
+    # Initialize and start chat session
+    chat_session = ChatSession(config)
+    chat_session.start_chat_loop()
     
     return 0
 

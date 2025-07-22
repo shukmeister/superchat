@@ -1,0 +1,88 @@
+"""Chat session management using modern AutoGen architecture."""
+
+import asyncio
+from autogen_agentchat.agents import AssistantAgent
+from superchat.core.config import SessionConfig
+from superchat.core.model_client import ModelClientManager
+from superchat.utils.parser import parse_input
+
+
+class ChatSession:
+    """Manages a single chat session using modern AutoGen AssistantAgent."""
+    
+    def __init__(self, config: SessionConfig):
+        self.config = config
+        self.model_name = None
+        self.model_client_manager = ModelClientManager()
+        self.assistant = None
+        
+    def initialize_agent(self):
+        """Initialize the AutoGen assistant agent for the selected model."""
+        if not self.config.models or len(self.config.models) != 1:
+            raise ValueError("Exactly one model required for chat session")
+        
+        self.model_name = self.config.models[0]
+        
+        # Create model client using modern AutoGen approach
+        # Skip API key validation since it was already checked at startup
+        model_client = self.model_client_manager.create_model_client(self.model_name, skip_validation=True)
+        
+        # Create AutoGen assistant agent
+        self.assistant = AssistantAgent(
+            name=f"assistant_{self.model_name}",
+            model_client=model_client,
+            system_message=self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely."
+        )
+    
+    def start_chat_loop(self):
+        """Start the interactive chat loop with >> prompt."""
+        # Initialize agent if not already done
+        if not self.assistant:
+            self.initialize_agent()
+        
+        model_config = self.model_client_manager.get_model_config(self.model_name)
+        display_name = model_config["display_name"] if model_config else self.model_name
+        print(f"Starting chat with {display_name}")
+        print()
+        
+        # Run the async chat loop
+        asyncio.run(self._async_chat_loop())
+    
+    async def _async_chat_loop(self):
+        """Async chat loop using AutoGen's modern API."""
+        while True:
+            try:
+                user_input = input(">> ")
+                parsed = parse_input(user_input)
+                
+                if parsed['type'] == 'empty':
+                    continue
+                    
+                if parsed['type'] == 'command':
+                    if parsed['command'] == 'exit':
+                        print("Terminating connection")
+                        break
+                    else:
+                        print(f"Unknown command: /{parsed['command']}")
+                        continue
+                        
+                # Handle regular messages
+                if parsed['type'] == 'message':
+                    try:
+                        print("Thinking...")
+                        response = await self._send_message_async(parsed['message'])
+                        print(f"\n{response}\n")
+                    except Exception as e:
+                        print(f"Error: {e}\n")
+                    
+            except KeyboardInterrupt:
+                print("\nTerminating connection")
+                break
+            except EOFError:
+                print("\nTerminating connection")  
+                break
+    
+    async def _send_message_async(self, message: str) -> str:
+        """Send message to assistant using modern AutoGen async API."""
+        result = await self.assistant.run(task=message)
+        return result.messages[-1].content

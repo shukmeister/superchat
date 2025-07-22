@@ -2,6 +2,7 @@
 
 from superchat.utils.parser import parse_input
 from superchat.core.config import SessionConfig
+from superchat.core.model_client import ModelClientManager
 
 def display_banner():
     """Display the ASCII art banner."""
@@ -30,12 +31,22 @@ def setup_loop():
     """Main setup loop for configuring chat parameters."""
     display_banner()
     
-    # Initialize session config
+    # Initialize session config and model client manager
     config = SessionConfig()
+    model_manager = ModelClientManager()
+    
+    # Check for API key on startup
+    if not model_manager.validate_setup():
+        print()
+        return None
+    
+    # Get available models
+    available_models = model_manager.get_available_models()
     
     display_session_info(config)
     
     print("Setup Mode - Configure your chat session")
+    print(f"Available models: {', '.join(available_models)}")
     print("Commands: /model, /start, /help, /exit")
     print()
     
@@ -63,6 +74,12 @@ def setup_loop():
                 if not config.is_valid_for_start():
                     print("Please select at least one model first using /model")
                     continue
+                if len(config.models) > 1:
+                    print("Error: /start requires exactly one model. Multiple models not supported yet.")
+                    print(f"Currently selected: {', '.join(config.models)}")
+                    print("Use /model to select a single model or wait for multi-agent support.")
+                    continue
+                config.start_session()
                 return config
                 
             elif command == "help":
@@ -76,10 +93,17 @@ def setup_loop():
             elif command == "model":
                 if len(args) < 1:
                     print("Usage: /model <name>")
+                    print(f"Available models: {', '.join(available_models)}")
                     continue
                 model_name = args[0]
+                if model_name not in available_models:
+                    print(f"Unknown model: {model_name}")
+                    print(f"Available models: {', '.join(available_models)}")
+                    continue
                 if config.add_model(model_name):
-                    print(f"Added model: {model_name}")
+                    model_config = model_manager.get_model_config(model_name)
+                    display_name = model_config["display_name"] if model_config else model_name
+                    print(f"Added model: {display_name}")
                     display_session_info(config)
                 else:
                     print(f"Model {model_name} already selected")

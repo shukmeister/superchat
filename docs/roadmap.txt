@@ -6,15 +6,15 @@ Milestone 1: 1x1 Chat
 1.4. ✅ Write a function to separate commands (e.g., /model) from chat messages.
 1.5. ✅ Store selected model(s) in an in-memory config 
 1.6. ✅ Define per-agent background-prompt templates in code
-1.7. ☐ Implement /start: initialize chat session for one model and enter chat loop. Chat UI has a >>>
-1.7.1. ☐ Add /start command handler to setup loop with validation (exactly 1 model required)
-1.7.2. ☐ Create AutoGen agent initialization for single model (no debate prompt for 1:1)
-1.7.3. ☐ Implement basic chat input loop with >>> prompt
-1.7.4. ☐ Configure model API connection through AutoGen
-1.7.5. ☐ Add agent response rendering and formatting
-1.7.6. ☐ Implement /exit command to end chat session
-1.8. ☐ In chat loop, read user input (text or /ask <agent>), call model API, render response
-1.9. ☐ Implement /exit to end the session
+1.7. ✅ Implement /start: initialize chat session for one model and enter chat loop. Chat UI has a >>>
+1.7.1. ✅ Add /start command handler to setup loop with validation (exactly 1 model required)
+1.7.2. ✅ Create AutoGen agent initialization for single model (no debate prompt for 1:1)
+1.7.3. ✅ Implement basic chat input loop with >>> prompt
+1.7.4. ✅ Configure model API connection through AutoGen
+1.7.5. ✅ Add agent response rendering and formatting
+1.7.6. ✅ Implement /exit command to end chat session
+1.8. ✅ In chat loop, read user input, call model API, render response
+1.9. ✅ Implement /exit to end the session
 
 Milestone 2: 1x N Debate
 
@@ -30,6 +30,7 @@ Milestone 2: 1x N Debate
    switch to round-robin multi-agent loop (in slot order)
 2.8. ☐ In multi-agent loop: on each "turn" (user text or empty), loop through active agents, include full shared context + history, solicit reply
 2.9. ☐ Honor /boot to remove agents mid-debate; support implicit empty-input turns
+3.0 Create /ask command to ask a specific agent a follow up question
 
 Milestone 3: CLI-Flag Shortcuts
 
@@ -49,3 +50,10 @@ Milestone 4: Voice
 Milestone 5: Threaded Conversations
 
 (?) P2: Threaded conversation system (replacing round robin) - Implement a system where each message has a unique ID and can reply to another via a reply_to field, forming threads. Models respond only to specific messages by ID or when invited by the user with commands like /open for general input, ensuring controlled and relevant model participation.
+
+Other
+
+- Add russian symbol to single chat
+- Add more info to session, spruce it up
+- Make it more readable
+- Make default > and then during chat >>
