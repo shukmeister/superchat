@@ -1,8 +1,22 @@
-"""Chat session management using modern AutoGen architecture."""
+"""Chat session management using modern AutoGen architecture.
+
+This module is the "conversation manager" - it handles the actual chat flow and user interaction.
+While model_client.py handles the technical API calls, this module manages the conversation experience.
+
+Key responsibilities:
+- Initialize AutoGen agents with the selected models
+- Run the interactive chat loop (the >> prompt you see)
+- Process user input (regular messages vs commands like /exit)
+- Send messages to AI models and display their responses
+- Handle conversation state and flow control
+
+Think of it as the "conversation brain" - it decides when to call the AI,
+what to send, how to display responses, and when to end the session.
+"""
 
 import asyncio
 from autogen_agentchat.agents import AssistantAgent
-from superchat.core.config import SessionConfig
+from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.parser import parse_input
 

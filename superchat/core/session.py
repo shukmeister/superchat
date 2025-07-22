@@ -1,4 +1,18 @@
-"""Session configuration management."""
+"""Session configuration and state management.
+
+This module manages the runtime state of a superchat session - what the user has configured
+and the current status of their chat session.
+
+Key responsibilities:
+- Track which models the user has selected for their chat
+- Store session settings (voice mode, active/inactive status)
+- Provide different system prompts for single vs multi-agent conversations
+- Validate session configuration before starting a chat
+- Manage session lifecycle (start/stop)
+
+Think of it as the app's "memory" - it remembers what you've configured
+and keeps track of the current session state throughout your conversation.
+"""
 
 class SessionConfig:
     """Manages in-memory configuration for a chat session."""

@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+"""Main entry point for superchat - AI-driven discussions and multi-agent debates.
+
+This is where everything starts. It's the app's "front door" that processes command line
+arguments and kicks off the setup process.
+
+Key responsibilities:
+- Parse command line arguments (--model, --voice flags, etc.)
+- Initialize the setup loop where users configure their session
+- Eventually handle direct CLI shortcuts (like starting with models pre-selected)
+- Pass control to the appropriate components (setup UI, then chat system)
+
+Think of it as the app's "receptionist" - it greets you when you run superchat,
+figures out what you want to do, and routes you to the right place.
+"""
 
 import argparse
 import sys

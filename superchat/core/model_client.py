@@ -1,4 +1,17 @@
-"""Modern AutoGen model client for OpenRouter integration."""
+"""Modern AutoGen model client for OpenRouter integration.
+
+This module acts as the "phone system" between superchat and AI models.
+It handles the technical details of API communication so the rest of the app doesn't have to.
+
+Key responsibilities:
+- Load model configurations from models.json (which models are available, their settings)
+- Manage API key authentication (from .env, environment, or local config file)
+- Create OpenAI-compatible clients that can talk to OpenRouter's API
+- Abstract away the complexity of different model providers
+
+Think of it as your app's "AI service representative" - it knows how to properly
+format requests, handle authentication, and communicate with external AI services.
+"""
 
 import json
 import os

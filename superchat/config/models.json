@@ -1,12 +1,8 @@
 {
   "models": {
     "kimi": {
-      "name": "kimi",
       "display_name": "Kimi K2",
       "openrouter_id": "moonshotai/kimi-k2",
-      "provider": "openrouter",
-      "max_tokens": 32000,
-      "supports_streaming": true,
       "model_info": {
         "family": "moonshot",
         "vision": false,
@@ -16,12 +12,8 @@
       }
     },
     "deepseek": {
-      "name": "deepseek",
       "display_name": "DeepSeek V3",
       "openrouter_id": "deepseek/deepseek-chat-v3-0324",
-      "provider": "openrouter",
-      "max_tokens": 4096,
-      "supports_streaming": true,
       "model_info": {
         "family": "deepseek",
         "vision": false,

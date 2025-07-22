@@ -1,7 +1,21 @@
-"""Display functions for the superchat UI."""
+"""Display functions and setup loop for the superchat UI.
+
+This module handles all the visual elements and user interaction before starting a chat.
+It's the "setup wizard" that helps users configure their session.
+
+Key responsibilities:
+- Display the ASCII art banner and session info
+- Run the interactive setup loop (where users type /model, /start, etc.)
+- Process setup commands and validate user input
+- Check API key availability before allowing chat to start
+- Provide help and error messages during setup
+
+Think of it as the app's "front desk" - it greets users, helps them get set up,
+and hands them off to the chat system once everything is configured properly.
+"""
 
 from superchat.utils.parser import parse_input
-from superchat.core.config import SessionConfig
+from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 
 def display_banner():
