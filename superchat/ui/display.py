@@ -96,6 +96,7 @@ def setup_loop():
                 print()
                 print("Available commands:")
                 print("  /model <name> - Add a model to the chat")
+                print("  /remove <name> - Remove a model from the chat")
                 print("  /list - Show available models")
                 print("  /status - Show current configuration")
                 print("  /start - Begin the chat session")
@@ -201,6 +202,51 @@ def setup_loop():
                 else:
                     print()
                     print(f"Model {model_key} already selected")
+                    print()
+            
+            elif command == "remove":
+                if len(args) < 1:
+                    print()
+                    print("Usage: /remove <name>")
+                    print("Available models: K2, V3, R1")
+                    print()
+                    continue
+                user_input = args[0]
+                
+                # Try to find model by model name field first, then by key
+                model_key = None
+                for key in config.models:
+                    model_config = model_manager.get_model_config(key)
+                    if model_config and model_config.get("model", "").lower() == user_input.lower():
+                        model_key = key
+                        break
+                
+                # If not found by model name, try direct key match
+                if not model_key and user_input in config.models:
+                    model_key = user_input
+                
+                if not model_key:
+                    print()
+                    print(f"Model {user_input} not found in current configuration")
+                    print()
+                    continue
+                
+                if config.remove_model(model_key):
+                    print()
+                    model_config = model_manager.get_model_config(model_key)
+                    if model_config:
+                        family = model_config.get("family", "")
+                        model = model_config.get("model", "")
+                        version = model_config.get("version", "")
+                        full_name = f"{family} {model} {version}".strip()
+                        print(f"Removed model: {full_name}")
+                        print()
+                    else:
+                        print(f"Removed model: {model_key}")
+                        print()
+                else:
+                    print()
+                    print(f"Model {model_key} was not in configuration")
                     print()
                     
             else:
