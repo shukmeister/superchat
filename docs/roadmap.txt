@@ -3,7 +3,7 @@ Milestone 1: 1x1 Chat
 1.1. ✅ Scaffold project structure and install dependencies (pyautogen)
 1.2. ✅ Implement CLI entry-point (superchat / sc) with argparse stub
 1.3. ✅ Build setup loop: display ASCII "SUPERCHAT" banner and session info panel
-1.4. ☐ Write a function to separate commands (e.g., /model) from chat messages.
+1.4. ✅ Write a function to separate commands (e.g., /model) from chat messages.
 1.5. ☐ Store selected model(s) in an in-memory config 
 1.6. ☐ Define per-agent background-prompt templates in code
 1.7. ☐ Implement /start: initialize chat session for one model and enter chat loop. Chat UI has a >>>

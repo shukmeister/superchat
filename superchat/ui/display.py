@@ -1,5 +1,7 @@
 """Display functions for the superchat UI."""
 
+from superchat.utils.parser import parse_input
+
 def display_banner():
     """Display the ASCII art banner."""
     banner = """
@@ -44,22 +46,31 @@ def setup_loop():
     
     while True:
         try:
-            user_input = input(">> ").strip()
+            user_input = input(">> ")
+            parsed = parse_input(user_input)
             
-            if not user_input:
+            if parsed['type'] == 'empty':
+                continue
+            
+            if parsed['type'] == 'message':
+                print("Not in chat mode yet. Use commands to configure session.")
                 continue
                 
-            if user_input == "/exit":
+            # Handle commands
+            command = parsed['command']
+            args = parsed['args']
+            
+            if command == "exit":
                 print("Goodbye!")
                 return None
                 
-            elif user_input == "/start":
+            elif command == "start":
                 if not models:
                     print("Please select at least one model first using /model")
                     continue
                 return {"models": models, "voice": voice_enabled}
                 
-            elif user_input == "/help":
+            elif command == "help":
                 print("Available commands:")
                 print("  /model <name> - Add a model to the chat")
                 print("  /start - Begin the chat session")
@@ -67,12 +78,11 @@ def setup_loop():
                 print("  /exit - Exit superchat")
                 print()
                 
-            elif user_input.startswith("/model"):
-                parts = user_input.split()
-                if len(parts) < 2:
+            elif command == "model":
+                if len(args) < 1:
                     print("Usage: /model <name>")
                     continue
-                model_name = parts[1]
+                model_name = args[0]
                 if model_name not in models:
                     models.append(model_name)
                     print(f"Added model: {model_name}")
@@ -81,7 +91,7 @@ def setup_loop():
                     print(f"Model {model_name} already selected")
                     
             else:
-                print(f"Unknown command: {user_input}")
+                print(f"Unknown command: /{command}")
                 print("Type /help for available commands")
                 
         except KeyboardInterrupt:
