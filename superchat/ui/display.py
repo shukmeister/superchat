@@ -71,7 +71,6 @@ def setup_loop():
             
             if command == "exit":
                 print()
-                print()
                 print("Terminating connection")
                 return None
                 
