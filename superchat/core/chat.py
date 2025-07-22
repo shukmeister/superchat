@@ -55,8 +55,11 @@ class ChatSession:
             self.initialize_agent()
         
         model_config = self.model_client_manager.get_model_config(self.model_name)
-        display_name = model_config["display_name"] if model_config else self.model_name
-        print(f"Starting chat with {display_name}")
+        if model_config:
+            model = model_config.get("model", self.model_name)
+            print(f"Starting chat with [{model}]")
+        else:
+            print(f"Starting chat with [{self.model_name}]")
         print()
         
         # Run the async chat loop

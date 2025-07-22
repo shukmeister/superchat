@@ -60,8 +60,7 @@ def setup_loop():
     display_session_info(config)
     
     print("Setup Mode - Configure your chat session")
-    print(f"Available models: {', '.join(available_models)}")
-    print("Commands: /model, /start, /help, /exit")
+    print("Commands: /model, /list, /start, /help, /exit")
     print()
     
     while True:
@@ -73,7 +72,9 @@ def setup_loop():
                 continue
             
             if parsed['type'] == 'message':
+                print()
                 print("Not in chat mode yet. Use commands to configure session.")
+                print()
                 continue
                 
             # Handle commands
@@ -81,50 +82,89 @@ def setup_loop():
             args = parsed['args']
             
             if command == "exit":
+                print()
                 print("Terminating connection")
                 return None
                 
             elif command == "start":
                 if not config.is_valid_for_start():
+                    print()
                     print("Please select at least one model first using /model")
+                    print()
                     continue
                 if len(config.models) > 1:
+                    print()
                     print("Error: /start requires exactly one model. Multiple models not supported yet.")
                     print(f"Currently selected: {', '.join(config.models)}")
                     print("Use /model to select a single model or wait for multi-agent support.")
+                    print()
                     continue
                 config.start_session()
                 return config
                 
             elif command == "help":
+                print()
                 print("Available commands:")
                 print("  /model <name> - Add a model to the chat")
+                print("  /list - Show available models")
                 print("  /start - Begin the chat session")
                 print("  /help - Show this help")
                 print("  /exit - Exit superchat")
                 print()
                 
+            elif command == "list":
+                print()
+                print("Available models:")
+                for model_name in available_models:
+                    model_config = model_manager.get_model_config(model_name)
+                    if model_config:
+                        family = model_config.get("family", "")
+                        model = model_config.get("model", "")
+                        version = model_config.get("version", "")
+                        full_name = f"{family} {model} {version}".strip()
+                        input_cost = model_config.get("input_cost", "N/A")
+                        output_cost = model_config.get("output_cost", "N/A")
+                        print(f"  {model_name} - {full_name} (${input_cost}/${output_cost} per 1M tokens)")
+                    else:
+                        print(f"  {model_name} - {model_name}")
+                print()
+                
             elif command == "model":
                 if len(args) < 1:
+                    print()
                     print("Usage: /model <name>")
                     print(f"Available models: {', '.join(available_models)}")
+                    print()
                     continue
                 model_name = args[0]
                 if model_name not in available_models:
+                    print()
                     print(f"Unknown model: {model_name}")
                     print(f"Available models: {', '.join(available_models)}")
+                    print()
                     continue
                 if config.add_model(model_name):
+                    print()
                     model_config = model_manager.get_model_config(model_name)
-                    display_name = model_config["display_name"] if model_config else model_name
-                    print(f"Added model: {display_name}")
+                    if model_config:
+                        family = model_config.get("family", "")
+                        model = model_config.get("model", "")
+                        version = model_config.get("version", "")
+                        full_name = f"{family} {model} {version}".strip()
+                        print(f"Added model: {full_name}")
+                    else:
+                        print(f"Added model: {model_name}")
                     display_session_info(config)
                 else:
+                    print()
                     print(f"Model {model_name} already selected")
+                    print()
                     
             else:
+                print()
                 print(f"Unknown command: /{command}")
                 print("Type /help for available commands")
+                print()
                 
         except KeyboardInterrupt:
             print("\nTerminating connection")
