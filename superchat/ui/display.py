@@ -56,7 +56,7 @@ def setup_loop():
             args = parsed['args']
             
             if command == "exit":
-                print("Goodbye!")
+                print("Terminating connection")
                 return None
                 
             elif command == "start":
@@ -89,8 +89,8 @@ def setup_loop():
                 print("Type /help for available commands")
                 
         except KeyboardInterrupt:
-            print("\nGoodbye!")
+            print("\nTerminating connection")
             return None
         except EOFError:
-            print("\nGoodbye!")
+            print("\nTerminating connection")
             return None
