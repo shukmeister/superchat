@@ -11,32 +11,15 @@ AI-driven discussions and multi-agent debates. A terminal-based CLI application 
 
 This is a private package meant for usage on macOS. To install:
 
-1. Ensure you have access to this repository
-2. Choose one of these installation methods:
+1. Go to the [Releases page](https://github.com/shukmeister/superchat/releases)
+2. Download the latest `superchat-X.X-py3-none-any.whl` file
+3. Install using pip:
 
-### Option 1: pipx (Recommended)
 ```bash
-brew install pipx
-pipx install git+https://github.com/shukmeister/superchat.git
+pip install --user superchat-X.X-py3-none-any.whl
 ```
 
-### Option 2: Virtual Environment
-```bash
-python -m venv superchat-env
-source superchat-env/bin/activate
-pip install git+https://github.com/shukmeister/superchat.git
-```
-
-### Option 3: User Installation
-```bash
-pip install --user git+https://github.com/shukmeister/superchat.git
-```
-Make sure `~/.local/bin` is in your PATH.
-
-### Option 4: Force System Installation (if needed)
-```bash
-pip install --break-system-packages git+https://github.com/shukmeister/superchat.git
-```
+Make sure `~/.local/bin` is in your PATH for the `superchat` and `sc` commands to work.
 
 ## Usage
 
@@ -71,6 +54,6 @@ Or place your API key in `~/.superchat/config`.
 
 To update to the latest version:
 
-```bash
-pip install --upgrade git+https://github.com/shukmeister/superchat.git
-```
+1. Download the latest wheel file from the [Releases page](https://github.com/shukmeister/superchat/releases)
+2. Uninstall the current version: `pip uninstall superchat`
+3. Install the new version: `pip install --user superchat-X.X-py3-none-any.whl`
