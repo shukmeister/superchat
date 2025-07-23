@@ -112,10 +112,12 @@ def setup_loop():
                 for model_name in available_models:
                     model_config = model_manager.get_model_config(model_name)
                     if model_config:
+                        company = model_config.get("company", "")
                         family = model_config.get("family", "")
                         model = model_config.get("model", "")
-                        version = model_config.get("version", "")
-                        full_name = f"{family} {model} {version}".strip()
+                        release = model_config.get("release", "")
+                        description = model_config.get("description", "")
+                        full_name = f"{family} {model} {release}".strip()
                         input_cost = model_config.get("input_cost", "N/A")
                         output_cost = model_config.get("output_cost", "N/A")
                         context_length = model_config.get("context_length", "N/A")
@@ -130,6 +132,8 @@ def setup_loop():
                             context_str = "N/A"
                         
                         print(f"- {full_name}:")
+                        if description:
+                            print(f"    {description}")
                         print(f"    Input   ${input_cost}/M")
                         print(f"    Output  ${output_cost}/M")
                         print(f"    Context {context_str}")
@@ -151,8 +155,8 @@ def setup_loop():
                         if model_config:
                             family = model_config.get("family", "")
                             model = model_config.get("model", "")
-                            version = model_config.get("version", "")
-                            full_name = f"{family} {model} {version}".strip()
+                            release = model_config.get("release", "")
+                            full_name = f"{family} {model} {release}".strip()
                             print(f"- Model {identifier}: {full_name}")
                         else:
                             print(f"- Model {identifier}: {model_key}")
@@ -191,10 +195,11 @@ def setup_loop():
                     print()
                     model_config = model_manager.get_model_config(model_key)
                     if model_config:
+                        company = model_config.get("company", "")
                         family = model_config.get("family", "")
                         model = model_config.get("model", "")
-                        version = model_config.get("version", "")
-                        full_name = f"{family} {model} {version}".strip()
+                        release = model_config.get("release", "")
+                        full_name = f"{family} {model} {release}".strip()
                         print(f"Added model: {full_name}")
                         print()
                     else:
@@ -236,10 +241,11 @@ def setup_loop():
                     print()
                     model_config = model_manager.get_model_config(model_key)
                     if model_config:
+                        company = model_config.get("company", "")
                         family = model_config.get("family", "")
                         model = model_config.get("model", "")
-                        version = model_config.get("version", "")
-                        full_name = f"{family} {model} {version}".strip()
+                        release = model_config.get("release", "")
+                        full_name = f"{family} {model} {release}".strip()
                         print(f"Removed model: {full_name}")
                         print()
                     else:

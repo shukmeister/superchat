@@ -1,9 +1,11 @@
 {
   "models": {
     "kimi-k2": {
+      "company": "Moonshot",
       "family": "Kimi",
       "model": "K2",
-      "version": "",
+      "release": "",
+      "description": "The strongest open-source coding model as of July 2025. A great general-purpose LLM because of its mixture of experts (MOE) system. Performs similar to Claude 4 Sonnet and Opus.",
       "openrouter_id": "moonshotai/kimi-k2",
       "input_cost": 0.14,
       "output_cost": 2.49,
@@ -18,9 +20,11 @@
       }
     },
     "deepseek-v3": {
+      "company": "DeepSeek",
       "family": "DeepSeek",
       "model": "V3",
-      "version": "0324",
+      "release": "0324",
+      "description": "Updated, stronger version of the V3 coding model. Non-reasoning for fast code output. Competitive with Claude 3.5 Sonnet",
       "openrouter_id": "deepseek/deepseek-chat-v3-0324",
       "input_cost": 0.25,
       "output_cost": 0.85,
@@ -35,9 +39,11 @@
       }
     },
     "deepseek-r1": {
+      "company": "DeepSeek",
       "family": "DeepSeek",
       "model": "R1",
-      "version": "0528",
+      "release": "0528",
+      "description": "A reasoning model that performs similarly to OpenAI's o3. It thinks before it responds.",
       "openrouter_id": "deepseek/deepseek-r1-0528",
       "input_cost": 0.40,
       "output_cost": 2.0,
@@ -46,6 +52,101 @@
       "model_info": {
         "family": "deepseek",
         "vision": false,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
+    },
+    "grok-4": {
+      "company": "xAI",
+      "family": "Grok",
+      "model": "4",
+      "release": "",
+      "description": "Strong reasoning, coding, and real-time web access. Has access to all posts on X.",
+      "openrouter_id": "x-ai/grok-4",
+      "input_cost": 3.0,
+      "output_cost": 15.0,
+      "context_length": 256000,
+      "creation_date": "2025-07-09",
+      "model_info": {
+        "family": "x-ai",
+        "vision": false,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
+    },
+    "llama-4-maverick": {
+      "company": "Meta",
+      "family": "Llama",
+      "model": "Maverick 4",
+      "release": "17B 128E Instruct FP8",
+      "description": "The largest of Meta's Llama 4 family. Cost-effective and comparable to DeepSeek V3 at coding",
+      "openrouter_id": "meta-llama/llama-4-maverick",
+      "input_cost": 0.15,
+      "output_cost": 0.60,
+      "context_length": 1048576,
+      "creation_date": "2025-04-05",
+      "model_info": {
+        "family": "meta-llama",
+        "vision": false,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
+    },
+    "gemini-2.5-flash-lite": {
+      "company": "Google",
+      "family": "Gemini",
+      "model": "2.5 Flash Lite",
+      "release": "",
+      "description": "Lightweight reasoning model optimized for ultra-low latency and cost efficiency",
+      "openrouter_id": "google/gemini-2.5-flash-lite",
+      "input_cost": 0.10,
+      "output_cost": 0.40,
+      "context_length": 1048576,
+      "creation_date": "2025-07-22",
+      "model_info": {
+        "family": "google",
+        "vision": false,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
+    },
+    "gemini-2.5-flash": {
+      "company": "Google",
+      "family": "Gemini",
+      "model": "2.5 Flash",
+      "release": "",
+      "description": "Google's workhorse model, designed for reasoning, coding, mathematics, and scientific tasks. Has customizable reasoning parameters",
+      "openrouter_id": "google/gemini-2.5-flash",
+      "input_cost": 0.30,
+      "output_cost": 2.50,
+      "context_length": 1048576,
+      "creation_date": "2025-06-17",
+      "model_info": {
+        "family": "google",
+        "vision": true,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
+    },
+    "gemini-2.5-pro": {
+      "company": "Google",
+      "family": "Gemini",
+      "model": "2.5 Pro",
+      "release": "",
+      "description": "The strongest version of Google's workhorse model, designed for reasoning, coding, mathematics, and scientific tasks. Has customizable reasoning parameters",
+      "openrouter_id": "google/gemini-2.5-pro",
+      "input_cost": 1.25,
+      "output_cost": 10.0,
+      "context_length": 1048576,
+      "creation_date": "2025-06-17",
+      "model_info": {
+        "family": "google",
+        "vision": true,
         "function_calling": true,
         "json_output": true,
         "structured_output": false
