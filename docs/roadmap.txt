@@ -53,16 +53,10 @@ Milestone 5: Threaded Conversations
 
 Other
 
-- Add more info to session, spruce it up
-- Make it more readable
 - Modify the provider route requests to get the best models: https://openrouter.ai/docs/features/provider-routing
-- Add a version of superchat program version output to the beginning of the, output version on /status
 - output temperature, thinking mode in /status, voice also
-- Add a thinking/loading status when waiting for a response
 - If a configuration is preloaded then show the status of the configuruation and say (preloaded configuration:)
    - should we enable adding multiple models at once with comma?
-- add more models, add what models are good for (short descriptors)
-- make the output of models appear properly in the terminal
 - allow pass through CLI model start
 - set up reasoning tokens
 
@@ -71,3 +65,10 @@ Done
 - Add russian symbol to single chat
 - Make default > and then during chat >>
 - add costs to the models
+- Make it more readable
+- fuzzy logic model selection
+- add more models, add what models are good for (short descriptors)
+- make the output of models appear properly in the terminal
+- Add more info to session, spruce it up
+- Add a version of superchat program version output to the beginning of the
+- Add a thinking/loading status when waiting for a response
