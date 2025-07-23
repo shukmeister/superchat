@@ -18,7 +18,7 @@ from superchat.utils.parser import parse_input
 from superchat.utils.identifiers import get_model_identifier
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
-from superchat import __version__
+from importlib.metadata import version
 
 def display_banner():
     """Display the ASCII art banner."""
@@ -48,7 +48,7 @@ def setup_loop():
     # Get available models
     available_models = model_manager.get_available_models()
     
-    print(f"Version v{__version__}\n")
+    print(f"Version v{version('superchat')}\n")
     print("Configure your session before starting")
     print("Type /help for commands")
     print()
