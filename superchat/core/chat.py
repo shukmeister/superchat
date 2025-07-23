@@ -16,6 +16,7 @@ what to send, how to display responses, and when to end the session.
 
 import asyncio
 from autogen_agentchat.agents import AssistantAgent
+from halo import Halo
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.parser import parse_input
@@ -82,6 +83,11 @@ class ChatSession:
                         print()
                         print("Terminating connection")
                         break
+                    elif parsed['command'] == 'stats':
+                        print()
+                        self._display_stats()
+                        print()
+                        continue
                     else:
                         print()
                         print(f"Unknown command: /{parsed['command']}")
@@ -92,7 +98,10 @@ class ChatSession:
                 if parsed['type'] == 'message':
                     print()  # Add line break after user message
                     try:
-                        response = await self._send_message_async(parsed['message'])
+                        # Show loading spinner while waiting for response
+                        with Halo(text="Processing", spinner="dots"):
+                            response = await self._send_message_async(parsed['message'])
+                        
                         model_config = self.model_client_manager.get_model_config(self.model_name)
                         if model_config:
                             model = model_config.get("model", self.model_name)
@@ -114,5 +123,44 @@ class ChatSession:
     
     async def _send_message_async(self, message: str) -> str:
         """Send message to assistant using modern AutoGen async API."""
-        result = await self.assistant.run(task=message)
-        return result.messages[-1].content
+        # Use direct API call to get usage data
+        system_message = self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely."
+        response_content, usage_data = await self.model_client_manager.send_message_with_usage(
+            self.model_name, 
+            message, 
+            system_message
+        )
+        
+        # Track usage data in session config
+        self.config.add_usage_data(usage_data)
+        
+        return response_content
+    
+    def _display_stats(self):
+        """Display session statistics including token counts and costs."""
+        stats = self.config.get_stats()
+        model_config = self.model_client_manager.get_model_config(self.model_name)
+        
+        print("Session Statistics:")
+        print(f"  Time elapsed: {stats['duration']}")
+        print(f"  Conversation rounds: {stats['conversation_rounds']}")
+        print()
+        print("Token Usage:")
+        print(f"  Input tokens:  {stats['total_input_tokens']:,}")
+        print(f"  Output tokens: {stats['total_output_tokens']:,}")
+        print(f"  Total tokens:  {stats['total_tokens']:,}")
+        
+        if model_config:
+            # Calculate costs
+            input_cost_per_million = model_config.get("input_cost", 0)
+            output_cost_per_million = model_config.get("output_cost", 0)
+            
+            input_cost = (stats['total_input_tokens'] / 1_000_000) * input_cost_per_million
+            output_cost = (stats['total_output_tokens'] / 1_000_000) * output_cost_per_million
+            total_cost = input_cost + output_cost
+            
+            print()
+            print("Estimated Costs:")
+            print(f"  Input cost:  ${input_cost:.6f}")
+            print(f"  Output cost: ${output_cost:.6f}")
+            print(f"  Total cost:  ${total_cost:.6f}")
