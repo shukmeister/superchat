@@ -35,8 +35,8 @@ superchat = "superchat.main:main"
 sc = "superchat.main:main"
 
 [project.urls]
-Homepage = "https://github.com/username/superchat"
-Repository = "https://github.com/username/superchat.git"
+Homepage = "https://github.com/shukmeister/superchat"
+Repository = "https://github.com/shukmeister/superchat.git"
 
 [tool.setuptools.packages.find]
 where = ["."]

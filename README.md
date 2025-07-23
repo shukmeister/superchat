@@ -9,14 +9,10 @@ AI-driven discussions and multi-agent debates. A terminal-based CLI application 
 
 ## Installation
 
-This is a private package meant for usage on macOS. To install:
-
-1. Go to the [Releases page](https://github.com/shukmeister/superchat/releases)
-2. Download the latest `superchat-X.X-py3-none-any.whl` file
-3. Install using pip:
+This is only tested on zsh on macOS. To install:
 
 ```bash
-pip install --user superchat-X.X-py3-none-any.whl
+pip install --user git+https://github.com/shukmeister/superchat.git
 ```
 
 Make sure `~/.local/bin` is in your PATH for the `superchat` and `sc` commands to work.
@@ -54,6 +50,19 @@ Or place your API key in `~/.superchat/config`.
 
 To update to the latest version:
 
-1. Download the latest wheel file from the [Releases page](https://github.com/shukmeister/superchat/releases)
-2. Uninstall the current version: `pip uninstall superchat`
-3. Install the new version: `pip install --user superchat-X.X-py3-none-any.whl`
+```bash
+pip install --upgrade --user git+https://github.com/shukmeister/superchat.git
+```
+
+## Roadmap
+
+Planned features:
+
+```
+- Web search
+- Multi agent debate
+- CLI flag shortcuts
+- Prompt caching
+- Image processing
+- Voice mode
+```
