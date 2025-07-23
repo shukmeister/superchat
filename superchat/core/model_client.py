@@ -109,39 +109,3 @@ class ModelClientManager:
             model_info=model_config["model_info"]
         )
     
-    async def send_message_with_usage(self, model_name, message: str, system_message: str = None):
-        """Send message and return both response and usage data."""
-        from openai import AsyncOpenAI
-        
-        if not self.validate_setup():
-            raise RuntimeError("API key not configured")
-            
-        model_config = self.get_model_config(model_name)
-        if not model_config:
-            raise ValueError(f"Unknown model: {model_name}")
-        
-        # Create direct OpenAI client for usage data access
-        client = AsyncOpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=self.api_key
-        )
-        
-        messages = []
-        if system_message:
-            messages.append({"role": "system", "content": system_message})
-        messages.append({"role": "user", "content": message})
-        
-        response = await client.chat.completions.create(
-            model=model_config["openrouter_id"],
-            messages=messages
-        )
-        
-        # Extract message content and usage data
-        message_content = response.choices[0].message.content
-        usage_data = {
-            "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
-            "completion_tokens": response.usage.completion_tokens if response.usage else 0,
-            "total_tokens": response.usage.total_tokens if response.usage else 0
-        }
-        
-        return message_content, usage_data

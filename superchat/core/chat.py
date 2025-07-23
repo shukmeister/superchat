@@ -48,7 +48,7 @@ class ChatSession:
         self.assistant = AssistantAgent(
             name=f"assistant_{safe_name}",
             model_client=model_client,
-            system_message=self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. Never ask the user questions - provide direct answers to their queries."
+            system_message=self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. NEVER ask the user questions - provide direct answers to their queries. DO NOT PROMPT OR ASK THE USER QUESTIONS."
         )
     
     def start_chat_loop(self):
@@ -101,7 +101,15 @@ class ChatSession:
                     try:
                         # Show loading spinner while waiting for response
                         with Halo(text="Processing", spinner="dots"):
-                            response = await self._send_message_async(parsed['message'])
+                            task_result = await self.assistant.run(task=parsed['message'])
+                        
+                        # Extract usage data from TaskResult
+                        usage_data = self._extract_usage_from_task_result(task_result)
+                        if usage_data:
+                            self.config.add_usage_data(usage_data)
+                        
+                        # Get the response content from the last message
+                        response_content = self._get_response_from_task_result(task_result)
                         
                         model_config = self.model_client_manager.get_model_config(self.model_name)
                         if model_config:
@@ -109,9 +117,9 @@ class ChatSession:
                             # Get Russian letter identifier
                             model_index = self.config.models.index(self.model_name) if self.model_name in self.config.models else 0
                             identifier = get_model_identifier(model_index)
-                            print(f"{identifier} [{model}]: {response}\n")
+                            print(f"{identifier} [{model}]: {response_content}\n")
                         else:
-                            print(f"[{self.model_name}]: {response}\n")
+                            print(f"[{self.model_name}]: {response_content}\n")
                     except Exception as e:
                         print(f"Error: {e}\n")
                     
@@ -122,20 +130,40 @@ class ChatSession:
                 print("\nTerminating connection")  
                 break
     
-    async def _send_message_async(self, message: str) -> str:
-        """Send message to assistant using modern AutoGen async API."""
-        # Use direct API call to get usage data
-        system_message = self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. Never ask the user questions - provide direct answers to their queries."
-        response_content, usage_data = await self.model_client_manager.send_message_with_usage(
-            self.model_name, 
-            message, 
-            system_message
-        )
+    def _extract_usage_from_task_result(self, task_result):
+        """Extract token usage data from AutoGen TaskResult."""
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
         
-        # Track usage data in session config
-        self.config.add_usage_data(usage_data)
+        for message in task_result.messages:
+            if hasattr(message, 'models_usage') and message.models_usage:
+                # Handle both single RequestUsage object and list of RequestUsage objects
+                usage_items = message.models_usage if isinstance(message.models_usage, list) else [message.models_usage]
+                
+                for usage in usage_items:
+                    if hasattr(usage, 'prompt_tokens'):
+                        total_prompt_tokens += usage.prompt_tokens
+                    if hasattr(usage, 'completion_tokens'):
+                        total_completion_tokens += usage.completion_tokens
         
-        return response_content
+        if total_prompt_tokens > 0 or total_completion_tokens > 0:
+            return {
+                "prompt_tokens": total_prompt_tokens,
+                "completion_tokens": total_completion_tokens,
+                "total_tokens": total_prompt_tokens + total_completion_tokens
+            }
+        return None
+    
+    def _get_response_from_task_result(self, task_result):
+        """Extract the response content from AutoGen TaskResult."""
+        # Get the last message which should be the assistant's response
+        if task_result.messages:
+            last_message = task_result.messages[-1]
+            if hasattr(last_message, 'content'):
+                return last_message.content
+            elif hasattr(last_message, 'text'):
+                return last_message.text
+        return "No response received"
     
     def _display_stats(self):
         """Display session statistics including token counts and costs."""
