@@ -16,6 +16,7 @@ and hands them off to the chat system once everything is configured properly.
 
 from superchat.utils.parser import parse_input
 from superchat.utils.identifiers import get_model_identifier
+from superchat.utils.model_resolver import resolve_model_from_input, get_available_models_list, get_display_name
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from importlib.metadata import version
@@ -31,6 +32,8 @@ def display_banner():
                                                                                 
 """
     print(banner)
+
+
 
 def setup_loop():
     """Main setup loop for configuring chat parameters."""
@@ -106,6 +109,7 @@ def setup_loop():
                 print()
                 print("Chat commands (available after /start):")
                 print("  /stats - Show session statistics")
+                print("  /exit - Exit superchat")
                 print()
                 
             elif command == "list":
@@ -120,7 +124,7 @@ def setup_loop():
                         model = model_config.get("model", "")
                         release = model_config.get("release", "")
                         description = model_config.get("description", "")
-                        full_name = f"{family} {model} {release}".strip()
+                        full_name = get_display_name(model_config)
                         input_cost = model_config.get("input_cost", "N/A")
                         output_cost = model_config.get("output_cost", "N/A")
                         context_length = model_config.get("context_length", "N/A")
@@ -156,11 +160,8 @@ def setup_loop():
                         identifier = get_model_identifier(i)
                         model_config = model_manager.get_model_config(model_key)
                         if model_config:
-                            family = model_config.get("family", "")
-                            model = model_config.get("model", "")
-                            release = model_config.get("release", "")
-                            full_name = f"{family} {model} {release}".strip()
-                            print(f"- Model {identifier}: {full_name}")
+                            display_name = get_display_name(model_config)
+                            print(f"- Model {identifier}: {display_name}")
                         else:
                             print(f"- Model {identifier}: {model_key}")
                 else:
@@ -171,72 +172,89 @@ def setup_loop():
                 if len(args) < 1:
                     print()
                     print("Usage: /model <name>")
-                    print("Available models: K2, V3, R1")
+                    available_models_list = get_available_models_list(model_manager)
+                    print(f"Available models: {available_models_list}")
                     print()
                     continue
-                user_input = args[0]
+                user_input = " ".join(args)
                 
-                # Try to find model by model name field first, then by key
-                model_key = None
-                for key in available_models:
-                    model_config = model_manager.get_model_config(key)
-                    if model_config and model_config.get("model", "").lower() == user_input.lower():
-                        model_key = key
-                        break
+                # Resolve model using helper function
+                result = resolve_model_from_input(user_input, model_manager.models_config)
                 
-                # If not found by model name, try direct key match
-                if not model_key and user_input in available_models:
-                    model_key = user_input
-                
-                if not model_key:
+                if result.action_type == "selected":
+                    model_key = result.model_key
+                elif result.action_type == "suggest":
                     print()
-                    print(f"Unknown model: {user_input}")
-                    print("Available models: K2, V3, R1")
+                    print(result.message)
                     print()
                     continue
+                else:  # not_found
+                    print()
+                    print(result.message)
+                    available_models_list = get_available_models_list(model_manager)
+                    print(f"Available models: {available_models_list}")
+                    print()
+                    continue
+                
                 if config.add_model(model_key):
                     print()
                     model_config = model_manager.get_model_config(model_key)
                     if model_config:
-                        company = model_config.get("company", "")
-                        family = model_config.get("family", "")
-                        model = model_config.get("model", "")
-                        release = model_config.get("release", "")
-                        full_name = f"{family} {model} {release}".strip()
-                        print(f"Added model: {full_name}")
+                        display_name = get_display_name(model_config)
+                        print(f"Added model: {display_name}")
                         print()
                     else:
                         print(f"Added model: {model_key}")
                         print()
                 else:
                     print()
-                    print(f"Model {model_key} already selected")
+                    model_config = model_manager.get_model_config(model_key)
+                    if model_config:
+                        display_name = get_display_name(model_config)
+                        print(f"Model {display_name} already selected")
+                    else:
+                        print(f"Model {model_key} already selected")
                     print()
             
             elif command == "remove":
                 if len(args) < 1:
                     print()
                     print("Usage: /remove <name>")
-                    print("Available models: K2, V3, R1")
+                    if config.models:
+                        selected_names = []
+                        for model_key in config.models:
+                            model_config = model_manager.get_model_config(model_key)
+                            if model_config:
+                                display_name = get_display_name(model_config)
+                                selected_names.append(display_name)
+                            else:
+                                selected_names.append(model_key)
+                        print(f"Currently selected: {', '.join(selected_names)}")
+                    else:
+                        print("No models currently selected")
                     print()
                     continue
-                user_input = args[0]
+                user_input = " ".join(args)
                 
-                # Try to find model by model name field first, then by key
-                model_key = None
-                for key in config.models:
-                    model_config = model_manager.get_model_config(key)
-                    if model_config and model_config.get("model", "").lower() == user_input.lower():
-                        model_key = key
-                        break
+                # Create a subset of models config with only selected models
+                selected_models_config = {"models": {}}
+                for model_key in config.models:
+                    if model_key in model_manager.models_config["models"]:
+                        selected_models_config["models"][model_key] = model_manager.models_config["models"][model_key]
                 
-                # If not found by model name, try direct key match
-                if not model_key and user_input in config.models:
-                    model_key = user_input
+                # Resolve model using helper function
+                result = resolve_model_from_input(user_input, selected_models_config, "current configuration")
                 
-                if not model_key:
+                if result.action_type == "selected":
+                    model_key = result.model_key
+                elif result.action_type == "suggest":
                     print()
-                    print(f"Model {user_input} not found in current configuration")
+                    print(result.message)
+                    print()
+                    continue
+                else:  # not_found
+                    print()
+                    print(result.message)
                     print()
                     continue
                 
@@ -244,19 +262,20 @@ def setup_loop():
                     print()
                     model_config = model_manager.get_model_config(model_key)
                     if model_config:
-                        company = model_config.get("company", "")
-                        family = model_config.get("family", "")
-                        model = model_config.get("model", "")
-                        release = model_config.get("release", "")
-                        full_name = f"{family} {model} {release}".strip()
-                        print(f"Removed model: {full_name}")
+                        display_name = get_display_name(model_config)
+                        print(f"Removed model: {display_name}")
                         print()
                     else:
                         print(f"Removed model: {model_key}")
                         print()
                 else:
                     print()
-                    print(f"Model {model_key} was not in configuration")
+                    model_config = model_manager.get_model_config(model_key)
+                    if model_config:
+                        display_name = get_display_name(model_config)
+                        print(f"Model {display_name} was not in configuration")
+                    else:
+                        print(f"Model {model_key} was not in configuration")
                     print()
             
             elif command == "stats":

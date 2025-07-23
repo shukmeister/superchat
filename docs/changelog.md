@@ -2,6 +2,9 @@
 
 ## [0.5] - 2025-07-23
 - Refactored chat functionality to use AutoGen agents for 1:1 conversations with unified usage tracking
+- Added intelligent fuzzy matching for model selection with auto-selection
+- Improved model selection UX - supports natural language input like "flash lite", "deepseek v3"
+- Refactored /model and /remove commands to use shared model resolution logic
 
 ## [0.4]
 - Added session statistics tracking with /stats command and exit summary
