@@ -9,13 +9,33 @@ AI-driven discussions and multi-agent debates. A terminal-based CLI application 
 
 ## Installation
 
-This is a private package. To install:
+This is a private package meant for usage on macOS. To install:
 
 1. Ensure you have access to this repository
-2. Install directly from Git:
+2. Choose one of these installation methods:
 
+### Option 1: pipx (Recommended)
 ```bash
+brew install pipx
+pipx install git+https://github.com/shukmeister/superchat.git
+```
+
+### Option 2: Virtual Environment
+```bash
+python -m venv superchat-env
+source superchat-env/bin/activate
 pip install git+https://github.com/shukmeister/superchat.git
+```
+
+### Option 3: User Installation
+```bash
+pip install --user git+https://github.com/shukmeister/superchat.git
+```
+Make sure `~/.local/bin` is in your PATH.
+
+### Option 4: Force System Installation (if needed)
+```bash
+pip install --break-system-packages git+https://github.com/shukmeister/superchat.git
 ```
 
 ## Usage
