@@ -9,10 +9,13 @@ Key responsibilities:
 - Provide different system prompts for single vs multi-agent conversations
 - Validate session configuration before starting a chat
 - Manage session lifecycle (start/stop)
+- Track token usage and conversation statistics
 
 Think of it as the app's "memory" - it remembers what you've configured
 and keeps track of the current session state throughout your conversation.
 """
+
+import time
 
 class SessionConfig:
     """Manages in-memory configuration for a chat session."""
@@ -23,6 +26,13 @@ class SessionConfig:
         self.session_active = False
         self.current_model = None
         self.debate_prompt = self._create_debate_prompt()
+        
+        # Token tracking
+        self.session_start_time = None
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.total_tokens = 0
+        self.conversation_rounds = 0
     
     def add_model(self, model_name):
         """Add a model to the session if not already present."""
@@ -49,6 +59,7 @@ class SessionConfig:
         if self.models:
             self.session_active = True
             self.current_model = self.models[0]  # Default to first model
+            self.session_start_time = time.time()
             return True
         return False
     
@@ -56,6 +67,34 @@ class SessionConfig:
         """Mark session as inactive."""
         self.session_active = False
         self.current_model = None
+    
+    def add_usage_data(self, usage_data):
+        """Add token usage data from a conversation round."""
+        self.total_input_tokens += usage_data.get("prompt_tokens", 0)
+        self.total_output_tokens += usage_data.get("completion_tokens", 0)
+        self.total_tokens += usage_data.get("total_tokens", 0)
+        self.conversation_rounds += 1
+    
+    def get_session_duration(self):
+        """Get session duration in seconds."""
+        if self.session_start_time:
+            return time.time() - self.session_start_time
+        return 0
+    
+    def get_stats(self):
+        """Get session statistics."""
+        duration = self.get_session_duration()
+        hours = int(duration // 3600)
+        minutes = int((duration % 3600) // 60)
+        seconds = int(duration % 60)
+        
+        return {
+            "duration": f"{hours:02d}:{minutes:02d}:{seconds:02d}",
+            "conversation_rounds": self.conversation_rounds,
+            "total_input_tokens": self.total_input_tokens,
+            "total_output_tokens": self.total_output_tokens,
+            "total_tokens": self.total_tokens
+        }
     
     def get_config_dict(self):
         """Return configuration as dictionary."""

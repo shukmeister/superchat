@@ -104,6 +104,9 @@ def setup_loop():
                 print("  /help - Show this help")
                 print("  /exit - Exit superchat")
                 print()
+                print("Chat commands (available after /start):")
+                print("  /stats - Show session statistics")
+                print()
                 
             elif command == "list":
                 print()
@@ -255,6 +258,11 @@ def setup_loop():
                     print()
                     print(f"Model {model_key} was not in configuration")
                     print()
+            
+            elif command == "stats":
+                print()
+                print("The /stats command is only available during chat sessions.")
+                print()
                     
             else:
                 print()

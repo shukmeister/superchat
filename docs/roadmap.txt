@@ -63,6 +63,8 @@ Other
    - should we enable adding multiple models at once with comma?
 - add more models, add what models are good for (short descriptors)
 - make the output of models appear properly in the terminal
+- allow pass through CLI model start
+- set up reasoning tokens
 
 Done
 
