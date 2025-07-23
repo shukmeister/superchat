@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "superchat"
+version = "0.3"
+description = "AI-driven discussions and multi-agent debates"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "superchat"},
+]
+keywords = ["ai", "chat", "cli", "autogen", "multi-agent"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "autogen-agentchat>=0.4.0",
+    "autogen-ext[openai]>=0.4.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+superchat = "superchat.main:main"
+sc = "superchat.main:main"
+
+[project.urls]
+Homepage = "https://github.com/username/superchat"
+Repository = "https://github.com/username/superchat.git"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["superchat*"]

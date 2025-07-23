@@ -13,6 +13,13 @@ superchat is a terminal-based command-line interface (CLI) application for commu
 - Try to avoid using any CLI TUI library but if absolutely necessary use blessed
 - Each agent should have a background prompt that specifies that it is in a discourse with other AIs and that it should review each other AIs inputs and then make its own recommendations. If it disagrees with another AI, it should specify why. The background prompt guides disagreement rationale.
 
+### Installation & Distribution
+- **Package Structure**: Create `pyproject.toml` with console script entry point
+- **Installation Method**: Users install directly from private repository using `pip install git+https://github.com/username/superchat.git`
+- **Command Access**: After installation, users can run `superchat` from any terminal location
+- **Dependencies**: All Python dependencies automatically handled during pip installation
+- **Updates**: Users can update with `pip install --upgrade git+https://github.com/username/superchat.git`
+
 ## User Interface
 superchat is accessed through a unix system terminal CLI interface. After starting the system in the terminal with the below startup command, a TUI chat interface will open.
 
