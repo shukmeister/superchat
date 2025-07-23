@@ -94,5 +94,12 @@ def get_display_name(model_data: Dict) -> str:
     model = model_data.get("model", "")
     release = model_data.get("release", "")
     
-    parts = [family, model, release]
-    return " ".join(part for part in parts if part.strip()).strip()
+    # Build base name from family and model
+    base_parts = [family, model]
+    base_name = " ".join(part for part in base_parts if part.strip()).strip()
+    
+    # Add release in parentheses if it exists
+    if release and release.strip():
+        return f"{base_name} ({release.strip()})"
+    else:
+        return base_name
