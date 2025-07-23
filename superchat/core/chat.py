@@ -48,7 +48,7 @@ class ChatSession:
         self.assistant = AssistantAgent(
             name=f"assistant_{safe_name}",
             model_client=model_client,
-            system_message=self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely."
+            system_message=self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. Never ask the user questions - provide direct answers to their queries."
         )
     
     def start_chat_loop(self):
@@ -81,6 +81,7 @@ class ChatSession:
                 if parsed['type'] == 'command':
                     if parsed['command'] == 'exit':
                         print()
+                        self._display_exit_summary()
                         print("Terminating connection")
                         break
                     elif parsed['command'] == 'stats':
@@ -124,7 +125,7 @@ class ChatSession:
     async def _send_message_async(self, message: str) -> str:
         """Send message to assistant using modern AutoGen async API."""
         # Use direct API call to get usage data
-        system_message = self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely."
+        system_message = self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. Never ask the user questions - provide direct answers to their queries."
         response_content, usage_data = await self.model_client_manager.send_message_with_usage(
             self.model_name, 
             message, 
@@ -164,3 +165,25 @@ class ChatSession:
             print(f"  Input cost:  ${input_cost:.6f}")
             print(f"  Output cost: ${output_cost:.6f}")
             print(f"  Total cost:  ${total_cost:.6f}")
+    
+    def _display_exit_summary(self):
+        """Display session summary on exit with tokens and costs."""
+        stats = self.config.get_stats()
+        model_config = self.model_client_manager.get_model_config(self.model_name)
+        
+        print("Session Summary:")
+        print(f"  Time elapsed: {stats['duration']}")
+        print(f"  Conversation rounds: {stats['conversation_rounds']}")
+        print(f"  Total tokens: {stats['total_tokens']:,}")
+        
+        if model_config:
+            # Calculate total cost
+            input_cost_per_million = model_config.get("input_cost", 0)
+            output_cost_per_million = model_config.get("output_cost", 0)
+            
+            input_cost = (stats['total_input_tokens'] / 1_000_000) * input_cost_per_million
+            output_cost = (stats['total_output_tokens'] / 1_000_000) * output_cost_per_million
+            total_cost = input_cost + output_cost
+            
+            print(f"  Total cost: ${total_cost:.6f}")
+        print()

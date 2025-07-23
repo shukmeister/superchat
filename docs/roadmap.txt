@@ -39,8 +39,8 @@ Milestone 3: CLI-Flag Shortcuts
 3.3. ☐ Auto-invoke /start when minimal flags given (e.g. one model)
 3.4. ☐ Ensure CLI parameters take priority over default settings
 3.5. ☐ Validate flags (no duplicate models, unknown flags) and error out
-3.6. ☐ Track and accumulate token counts, rounds, elapsed time; update on each turn; implement /stats
-3.7. ☐ On /exit, print summary (tokens, costs) and terminate
+3.6. ✅ Track and accumulate token counts, rounds, elapsed time; update on each turn; implement /stats
+3.7. ✅ On /exit, print summary (tokens, costs) and terminate
 3.8. ☐ /help command and update help text to include flag usage examples
 
 (BELOW THE LINE/DO NOT IMPLEMENT):
