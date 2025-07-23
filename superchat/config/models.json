@@ -151,6 +151,25 @@
         "json_output": true,
         "structured_output": false
       }
+    },
+    "qwen3-coder": {
+      "company": "Alibaba",
+      "family": "Qwen",
+      "model": "Qwen3 Coder",
+      "release": "480B A35B Instruct",
+      "description": "Advanced MOE coding model optimized for agentic tasks like function calling, tool use, and long-context reasoning over repos.",
+      "openrouter_id": "qwen/qwen3-coder",
+      "input_cost": 1.0,
+      "output_cost": 5.0,
+      "context_length": 1000000,
+      "creation_date": "2025-07-23",
+      "model_info": {
+        "family": "qwen",
+        "vision": false,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
     }
   }
 }
