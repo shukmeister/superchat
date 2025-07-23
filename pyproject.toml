@@ -40,3 +40,6 @@ Repository = "https://github.com/username/superchat.git"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["superchat*"]
+
+[tool.setuptools.package-data]
+superchat = ["config/*.json"]
