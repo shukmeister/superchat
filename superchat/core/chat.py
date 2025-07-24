@@ -15,8 +15,10 @@ what to send, how to display responses, and when to end the session.
 """
 
 import asyncio
-from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.messages import TextMessage
+from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_agentchat.conditions import MaxMessageTermination
 from halo import Halo
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
@@ -33,8 +35,7 @@ class ChatSession:
         self.model_client_manager = ModelClientManager()
         self.agents = []
         self.is_multi_agent = len(config.models) > 1
-        self.conversation_history = []  # Shared conversation history for all agents
-        self.current_round_messages = []  # Track messages in the current round
+        self.team = None  # Will hold RoundRobinGroupChat for multi-agent mode
         
     def initialize_agents(self):
         """Initialize AutoGen agents for the selected models."""
@@ -62,7 +63,12 @@ class ChatSession:
             
             self.agents.append(agent)
         
-        # Manual round-robin instead of GroupChat to avoid hanging issues
+        # Create RoundRobinGroupChat for multi-agent mode
+        if self.is_multi_agent:
+            # Set up termination to stop after one complete round (each agent responds once)
+            max_messages = len(self.agents) + 1  # +1 for the user message
+            termination = MaxMessageTermination(max_messages=max_messages)
+            self.team = RoundRobinGroupChat(self.agents, termination_condition=termination)
     
     def get_system_prompt(self, model_name, index, is_multi_agent):
         """Get appropriate system prompt for single or multi-agent mode."""
@@ -215,6 +221,7 @@ REMEMBER: You are having a real conversation with other AI agents who will actua
         # For single agent, only pass the current user message - no context needed
         current_conversation = [TextMessage(content=message, source="user")]
         
+        
         # Show loading spinner while waiting for response
         with Halo(text="Processing", spinner="dots"):
             task_result = await agent.run(task=current_conversation)
@@ -227,12 +234,7 @@ REMEMBER: You are having a real conversation with other AI agents who will actua
         # Get the response content from the last message
         response_content = self._get_response_from_task_result(task_result)
         
-        # Add both user message and agent response to conversation history
-        self.conversation_history.append(TextMessage(content=message, source="user"))
-        for msg in task_result.messages:
-            # Only add messages from the agent (not user messages that were echoed back)
-            if hasattr(msg, 'source') and msg.source != "user":
-                self.conversation_history.append(msg)
+        # For single agent mode, no need to track conversation history
         
         model_config = self.model_client_manager.get_model_config(model_name)
         if model_config:
@@ -244,126 +246,84 @@ REMEMBER: You are having a real conversation with other AI agents who will actua
         else:
             print(f"[{model_name}]: {response_content}\n")
     
-    def _get_sliding_context(self):
-        """Get sliding context window: just the previous round of agent responses."""
-        if not self.conversation_history:
-            return []
+    async def _handle_group_chat(self, message, is_user_initiated=True):
+        """Handle multi-agent conversation with proper turn control."""
+        if not self.team:
+            raise RuntimeError("RoundRobinGroupChat team not initialized")
         
-        # Find the last user message in history to identify the previous round
-        previous_round_messages = []
-        last_user_index = -1
+        print()  # Add line break before group chat
         
-        # Find the most recent user message
-        for i in range(len(self.conversation_history) - 1, -1, -1):
-            if hasattr(self.conversation_history[i], 'source') and self.conversation_history[i].source == "user":
-                last_user_index = i
-                break
-        
-        # If we found a user message, include it and all agent responses after it
-        if last_user_index >= 0:
-            previous_round_messages = self.conversation_history[last_user_index:]
-        
-        return previous_round_messages
-    
-    async def _process_all_agents(self, task_message):
-        """Process a task for all agents with sliding context window."""
-        # Create conversation context for agents: previous round + current user message
-        # Only include the most recent agent responses (previous round) to reduce token usage
-        agent_context = self._get_sliding_context() + [TextMessage(content=task_message, source="user")]
-        
-        # Accumulate usage data from all agents for a single conversation round
-        total_prompt_tokens = 0
-        total_completion_tokens = 0
-        total_tokens = 0
-        
-        # Store agent responses to add to history after all agents respond
-        agent_responses = []
-        
-        # Process each agent with the same shared context
-        for i, agent in enumerate(self.agents):
-            model_name = self.config.models[i]
-            model_config = self.model_client_manager.get_model_config(model_name)
-            identifier = get_model_identifier(i)
-            
-            try:
-                # Show loading spinner in chat format for this specific agent
-                if model_config:
-                    model = model_config.get("model", model_name)
-                    spinner_text = f"{identifier} [{model}]: "
-                else:
-                    spinner_text = f"{identifier} [{model_name}]: "
-                
-                # Print the prefix first, then show spinner after the colon
-                print(spinner_text, end="", flush=True)
+        try:
+            if is_user_initiated:
+                # User provided input - run exactly one round (each agent responds once)
                 with Halo(text="Processing", spinner="dots"):
-                    # All agents get the same context (history + current question)
-                    task_result = await agent.run(task=agent_context)
-                # Clear just the spinner part, keep the prefix
-                print("\r" + spinner_text, end="", flush=True)
+                    task_result = await self.team.run(task=message)
                 
-                # Extract usage data but don't add to config yet
-                usage_data = self._extract_usage_from_task_result(task_result)
-                if usage_data:
-                    total_prompt_tokens += usage_data.get("prompt_tokens", 0)
-                    total_completion_tokens += usage_data.get("completion_tokens", 0)
-                    total_tokens += usage_data.get("total_tokens", 0)
+                # Reset the team for next round by creating a new instance
+                max_messages = len(self.agents) + 1
+                termination = MaxMessageTermination(max_messages=max_messages)
+                self.team = RoundRobinGroupChat(self.agents, termination_condition=termination)
                 
-                # Get response content
-                response_content = self._get_response_from_task_result(task_result)
+            else:
+                # Empty input - let agents continue discussing
+                # Use a higher message limit to allow extended discussion
+                termination = MaxMessageTermination(max_messages=10)
+                temp_team = RoundRobinGroupChat(self.agents, termination_condition=termination)
                 
-                # Display response (prefix already printed)
-                print(response_content)
-                
-                # Store agent responses to add to history after all agents complete
-                for msg in task_result.messages:
-                    if hasattr(msg, 'source') and msg.source != "user":
-                        agent_responses.append(msg)
-                
-                # Add newline between agents (except after the last one)
-                if i < len(self.agents) - 1:
-                    print()
+                with Halo(text="Processing agent discussion", spinner="dots"):
+                    task_result = await temp_team.run(task=message)
+            
+            # Display only the new agent responses (skip the user message echo)
+            agent_response_count = 0
+            for msg in task_result.messages:
+                if hasattr(msg, 'source') and msg.source != "user":
+                    # This is an agent response - display it
+                    agent_name = getattr(msg, 'source', 'agent')
+                    content = getattr(msg, 'content', str(msg))
                     
-            except Exception as e:
-                print(f"Error - {e}")
-                
-                # Add newline between agents (except after the last one)
-                if i < len(self.agents) - 1:
+                    # Find which agent this is and get identifier
+                    agent_index = self._find_agent_index_by_name(agent_name)
+                    if agent_index >= 0:
+                        identifier = get_model_identifier(agent_index)
+                        model_name = self.config.models[agent_index]
+                        model_config = self.model_client_manager.get_model_config(model_name)
+                        if model_config:
+                            model = model_config.get("model", model_name)
+                            print(f"{identifier} [{model}]: {content}")
+                        else:
+                            print(f"{identifier} [{model_name}]: {content}")
+                    else:
+                        print(f"[{agent_name}]: {content}")
                     print()
-        
-        # After all agents have responded, add user message and all agent responses to history
-        self.conversation_history.append(TextMessage(content=task_message, source="user"))
-        self.conversation_history.extend(agent_responses)
-        
-        # Add accumulated usage data as a single conversation round
-        if total_tokens > 0:
-            combined_usage = {
-                "prompt_tokens": total_prompt_tokens,
-                "completion_tokens": total_completion_tokens,
-                "total_tokens": total_tokens
-            }
-            self.config.add_usage_data(combined_usage)
-
-    async def _handle_multi_agent_response(self, message):
-        """Handle responses from multiple agents using manual round-robin."""
-        await self._process_all_agents(message)
-        print()  # Final line break
+                    agent_response_count += 1
+            
+            # Extract usage data from the group chat result
+            usage_data = self._extract_usage_from_task_result(task_result)
+            if usage_data:
+                self.config.add_usage_data(usage_data)
+                
+        except Exception as e:
+            print(f"Group chat error: {e}")
+            print()
     
-    async def _handle_agent_discussion(self):
-        """Handle empty input to trigger agent discussion."""
-        print()
-        
-        # Create a prompt for agents to continue discussing among themselves
-        discussion_prompt = "Continue the discussion. Share your thoughts on the topic or respond to what other agents have said."
-        
-        await self._process_all_agents(discussion_prompt)
-        print()
-    
-    def _find_agent_index(self, agent_name):
+    def _find_agent_index_by_name(self, agent_name):
         """Find the index of an agent by its name."""
         for i, agent in enumerate(self.agents):
             if agent.name == agent_name:
                 return i
         return -1
+
+    async def _handle_multi_agent_response(self, message):
+        """Handle responses from multiple agents using RoundRobinGroupChat."""
+        await self._handle_group_chat(message, is_user_initiated=True)
+    
+    async def _handle_agent_discussion(self):
+        """Handle empty input to trigger agent discussion."""
+        # Create a prompt for agents to continue discussing among themselves
+        discussion_prompt = "Continue the discussion. Share your thoughts on the topic or respond to what other agents have said."
+        
+        await self._handle_group_chat(discussion_prompt, is_user_initiated=False)
+    
     
     def _extract_usage_from_message(self, message):
         """Extract token usage data from a single message."""
