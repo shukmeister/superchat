@@ -16,7 +16,6 @@ what to send, how to display responses, and when to end the session.
 
 import asyncio
 from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.teams import RoundRobinGroupChat
 from halo import Halo
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
@@ -31,7 +30,6 @@ class ChatSession:
         self.config = config
         self.model_client_manager = ModelClientManager()
         self.agents = []
-        self.group_chat = None
         self.is_multi_agent = len(config.models) > 1
         
     def initialize_agents(self):
@@ -60,9 +58,7 @@ class ChatSession:
             
             self.agents.append(agent)
         
-        # Initialize group chat for multi-agent mode
-        if self.is_multi_agent:
-            self.group_chat = RoundRobinGroupChat(participants=self.agents)
+        # Manual round-robin instead of GroupChat to avoid hanging issues
     
     def get_system_prompt(self, model_name, index, is_multi_agent):
         """Get appropriate system prompt for single or multi-agent mode."""
@@ -199,61 +195,84 @@ class ChatSession:
             print(f"[{model_name}]: {response_content}\n")
     
     async def _handle_multi_agent_response(self, message):
-        """Handle responses from multiple agents using round-robin."""
+        """Handle responses from multiple agents using manual round-robin."""
         print()  # Extra line break for multi-agent responses
         
-        # Show loading spinner while waiting for all responses
-        with Halo(text="Processing", spinner="dots"):
-            # Run the group chat with the user message
-            result = await self.group_chat.run(task=message)
+        # Process each agent individually instead of using GroupChat to avoid hanging
+        for i, agent in enumerate(self.agents):
+            model_name = self.config.models[i]
+            model_config = self.model_client_manager.get_model_config(model_name)
+            
+            try:
+                # Show loading spinner for this specific agent
+                agent_name = model_config.get("model", model_name) if model_config else model_name
+                with Halo(text=f"Processing {agent_name}", spinner="dots"):
+                    task_result = await agent.run(task=message)
+                
+                # Extract usage data
+                usage_data = self._extract_usage_from_task_result(task_result)
+                if usage_data:
+                    self.config.add_usage_data(usage_data)
+                
+                # Get response content
+                response_content = self._get_response_from_task_result(task_result)
+                
+                # Display response
+                if model_config:
+                    model = model_config.get("model", model_name)
+                    identifier = get_model_identifier(i)
+                    print(f"{identifier} [{model}]: {response_content}")
+                else:
+                    identifier = get_model_identifier(i)
+                    print(f"{identifier} [{model_name}]: {response_content}")
+                    
+            except Exception as e:
+                identifier = get_model_identifier(i)
+                agent_name = model_config.get("model", model_name) if model_config else model_name
+                print(f"{identifier} [{agent_name}]: Error - {e}")
         
-        # Extract usage data and display responses
-        for i, agent_message in enumerate(result.messages):
-            if hasattr(agent_message, 'source') and agent_message.source != 'user':
-                # Find which agent this message came from
-                agent_index = self._find_agent_index(agent_message.source)
-                if agent_index >= 0:
-                    model_name = self.config.models[agent_index]
-                    model_config = self.model_client_manager.get_model_config(model_name)
-                    
-                    # Extract usage data
-                    if hasattr(agent_message, 'models_usage') and agent_message.models_usage:
-                        usage_data = self._extract_usage_from_message(agent_message)
-                        if usage_data:
-                            self.config.add_usage_data(usage_data)
-                    
-                    # Display response
-                    if model_config:
-                        model = model_config.get("model", model_name)
-                        identifier = get_model_identifier(agent_index)
-                        print(f"{identifier} [{model}]: {agent_message.content}")
-                    else:
-                        identifier = get_model_identifier(agent_index)
-                        print(f"{identifier} [{model_name}]: {agent_message.content}")
         print()  # Final line break
     
     async def _handle_agent_discussion(self):
         """Handle empty input to trigger agent discussion."""
         print()
-        with Halo(text="Agents discussing", spinner="dots"):
-            # Use an empty task to trigger agent discussion
-            result = await self.group_chat.run(task="")
         
-        # Display agent responses
-        for i, agent_message in enumerate(result.messages):
-            if hasattr(agent_message, 'source') and agent_message.source != 'user':
-                agent_index = self._find_agent_index(agent_message.source)
-                if agent_index >= 0:
-                    model_name = self.config.models[agent_index]
-                    model_config = self.model_client_manager.get_model_config(model_name)
+        # Create a prompt for agents to continue discussing among themselves
+        discussion_prompt = "Continue the discussion. Share your thoughts on the topic or respond to what other agents have said."
+        
+        # Process each agent individually for discussion
+        for i, agent in enumerate(self.agents):
+            model_name = self.config.models[i]
+            model_config = self.model_client_manager.get_model_config(model_name)
+            
+            try:
+                # Show loading spinner for this specific agent
+                agent_name = model_config.get("model", model_name) if model_config else model_name
+                with Halo(text=f"Agent discussing: {agent_name}", spinner="dots"):
+                    task_result = await agent.run(task=discussion_prompt)
+                
+                # Extract usage data
+                usage_data = self._extract_usage_from_task_result(task_result)
+                if usage_data:
+                    self.config.add_usage_data(usage_data)
+                
+                # Get response content
+                response_content = self._get_response_from_task_result(task_result)
+                
+                # Display response
+                if model_config:
+                    model = model_config.get("model", model_name)
+                    identifier = get_model_identifier(i)
+                    print(f"{identifier} [{model}]: {response_content}")
+                else:
+                    identifier = get_model_identifier(i)
+                    print(f"{identifier} [{model_name}]: {response_content}")
                     
-                    if model_config:
-                        model = model_config.get("model", model_name)
-                        identifier = get_model_identifier(agent_index)
-                        print(f"{identifier} [{model}]: {agent_message.content}")
-                    else:
-                        identifier = get_model_identifier(agent_index)
-                        print(f"{identifier} [{model_name}]: {agent_message.content}")
+            except Exception as e:
+                identifier = get_model_identifier(i)
+                agent_name = model_config.get("model", model_name) if model_config else model_name
+                print(f"{identifier} [{agent_name}]: Error - {e}")
+        
         print()
     
     def _find_agent_index(self, agent_name):
