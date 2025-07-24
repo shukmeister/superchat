@@ -16,6 +16,7 @@ what to send, how to display responses, and when to end the session.
 
 import asyncio
 from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.messages import TextMessage
 from halo import Halo
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
@@ -32,6 +33,7 @@ class ChatSession:
         self.model_client_manager = ModelClientManager()
         self.agents = []
         self.is_multi_agent = len(config.models) > 1
+        self.conversation_history = []  # Shared conversation history for all agents
         
     def initialize_agents(self):
         """Initialize AutoGen agents for the selected models."""
@@ -68,15 +70,21 @@ class ChatSession:
             model_config = self.model_client_manager.get_model_config(model_name)
             display_name = get_display_name(model_config) if model_config else model_name
             
-            return f"""You are {display_name}, participating in a multi-agent debate with other AI assistants. You should:
+            return f"""You are {display_name}, participating in a multi-agent debate with other AI assistants. 
+
+IMPORTANT: You can see the full conversation history including messages from other agents and the user. Use this context to build upon previous responses, agree or disagree with other agents, and continue the discussion naturally.
+
+Guidelines:
 - Provide thoughtful, well-reasoned responses to user questions
 - Review and respond to other agents' contributions when appropriate
-- If you disagree with another agent, explain your reasoning clearly
+- If you disagree with another agent, explain your reasoning clearly and reference their specific points
+- Build upon ideas from previous messages in the conversation
 - Be concise and direct in your responses
 - Do not use emojis, bold text, italics, or other stylistic formatting
 - Focus on providing accurate and helpful information
 - Engage constructively with other agents' ideas
-- You may reference yourself as {display_name} when appropriate"""
+- You may reference yourself as {display_name} when appropriate
+- Reference other agents' responses by saying things like "I agree with the previous response that..." or "While the other agent mentioned X, I think..." """
         else:
             return self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. NEVER ask the user questions - provide direct answers to their queries. DO NOT PROMPT OR ASK THE USER QUESTIONS."
     
@@ -178,9 +186,12 @@ class ChatSession:
         agent = self.agents[0]
         model_name = self.config.models[0]
         
+        # Create current conversation including the new user message
+        current_conversation = self.conversation_history + [TextMessage(content=message, source="user")]
+        
         # Show loading spinner while waiting for response
         with Halo(text="Processing", spinner="dots"):
-            task_result = await agent.run(task=message)
+            task_result = await agent.run(task=current_conversation)
         
         # Extract usage data from TaskResult
         usage_data = self._extract_usage_from_task_result(task_result)
@@ -189,6 +200,13 @@ class ChatSession:
         
         # Get the response content from the last message
         response_content = self._get_response_from_task_result(task_result)
+        
+        # Add both user message and agent response to conversation history
+        self.conversation_history.append(TextMessage(content=message, source="user"))
+        for msg in task_result.messages:
+            # Only add messages from the agent (not user messages that were echoed back)
+            if hasattr(msg, 'source') and msg.source != "user":
+                self.conversation_history.append(msg)
         
         model_config = self.model_client_manager.get_model_config(model_name)
         if model_config:
@@ -201,13 +219,20 @@ class ChatSession:
             print(f"[{model_name}]: {response_content}\n")
     
     async def _process_all_agents(self, task_message):
-        """Process a task for all agents and display their responses."""
+        """Process a task for all agents with shared historical context."""
+        # Create conversation context for agents: history + current user message
+        # All agents get the same context (history + current question)
+        agent_context = self.conversation_history + [TextMessage(content=task_message, source="user")]
+        
         # Accumulate usage data from all agents for a single conversation round
         total_prompt_tokens = 0
         total_completion_tokens = 0
         total_tokens = 0
         
-        # Process each agent individually instead of using GroupChat to avoid hanging
+        # Store agent responses to add to history after all agents respond
+        agent_responses = []
+        
+        # Process each agent with the same shared context
         for i, agent in enumerate(self.agents):
             model_name = self.config.models[i]
             model_config = self.model_client_manager.get_model_config(model_name)
@@ -224,7 +249,8 @@ class ChatSession:
                 # Print the prefix first, then show spinner after the colon
                 print(spinner_text, end="", flush=True)
                 with Halo(text="Processing", spinner="dots"):
-                    task_result = await agent.run(task=task_message)
+                    # All agents get the same context (history + current question)
+                    task_result = await agent.run(task=agent_context)
                 # Clear just the spinner part, keep the prefix
                 print("\r" + spinner_text, end="", flush=True)
                 
@@ -241,6 +267,11 @@ class ChatSession:
                 # Display response (prefix already printed)
                 print(response_content)
                 
+                # Store agent responses to add to history after all agents complete
+                for msg in task_result.messages:
+                    if hasattr(msg, 'source') and msg.source != "user":
+                        agent_responses.append(msg)
+                
                 # Add newline between agents (except after the last one)
                 if i < len(self.agents) - 1:
                     print()
@@ -251,6 +282,10 @@ class ChatSession:
                 # Add newline between agents (except after the last one)
                 if i < len(self.agents) - 1:
                     print()
+        
+        # After all agents have responded, add user message and all agent responses to history
+        self.conversation_history.append(TextMessage(content=task_message, source="user"))
+        self.conversation_history.extend(agent_responses)
         
         # Add accumulated usage data as a single conversation round
         if total_tokens > 0:
