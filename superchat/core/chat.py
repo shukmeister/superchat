@@ -266,8 +266,8 @@ REMEMBER: You are having a real conversation with other AI agents who will actua
                 
             else:
                 # Empty input - let agents continue discussing
-                # Use a higher message limit to allow extended discussion
-                termination = MaxMessageTermination(max_messages=10)
+                # Use a limited message count for brief extended discussion
+                termination = MaxMessageTermination(max_messages=4)
                 temp_team = RoundRobinGroupChat(self.agents, termination_condition=termination)
                 
                 with Halo(text="Processing agent discussion", spinner="dots"):
