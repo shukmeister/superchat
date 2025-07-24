@@ -21,6 +21,7 @@ from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.parser import parse_input
 from superchat.utils.identifiers import get_model_identifier
+from superchat.utils.model_resolver import get_display_name
 
 
 class ChatSession:
@@ -63,14 +64,19 @@ class ChatSession:
     def get_system_prompt(self, model_name, index, is_multi_agent):
         """Get appropriate system prompt for single or multi-agent mode."""
         if is_multi_agent:
-            return f"""You are participating in a multi-agent debate with other AI assistants. You should:
+            # Get the full display name for the agent to include in their system prompt
+            model_config = self.model_client_manager.get_model_config(model_name)
+            display_name = get_display_name(model_config) if model_config else model_name
+            
+            return f"""You are {display_name}, participating in a multi-agent debate with other AI assistants. You should:
 - Provide thoughtful, well-reasoned responses to user questions
 - Review and respond to other agents' contributions when appropriate
 - If you disagree with another agent, explain your reasoning clearly
 - Be concise and direct in your responses
 - Do not use emojis, bold text, italics, or other stylistic formatting
 - Focus on providing accurate and helpful information
-- Engage constructively with other agents' ideas"""
+- Engage constructively with other agents' ideas
+- You may reference yourself as {display_name} when appropriate"""
         else:
             return self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. NEVER ask the user questions - provide direct answers to their queries. DO NOT PROMPT OR ASK THE USER QUESTIONS."
     
@@ -151,7 +157,7 @@ class ChatSession:
                         
                 # Handle regular messages
                 if parsed['type'] == 'message':
-                    print()  # Add line break after user message
+                    print()  # Add single line break after user message
                     try:
                         if self.is_multi_agent:
                             await self._handle_multi_agent_response(parsed['message'])
@@ -194,20 +200,28 @@ class ChatSession:
         else:
             print(f"[{model_name}]: {response_content}\n")
     
-    async def _handle_multi_agent_response(self, message):
-        """Handle responses from multiple agents using manual round-robin."""
-        print()  # Extra line break for multi-agent responses
-        
+    async def _process_all_agents(self, task_message):
+        """Process a task for all agents and display their responses."""
         # Process each agent individually instead of using GroupChat to avoid hanging
         for i, agent in enumerate(self.agents):
             model_name = self.config.models[i]
             model_config = self.model_client_manager.get_model_config(model_name)
+            identifier = get_model_identifier(i)
             
             try:
-                # Show loading spinner for this specific agent
-                agent_name = model_config.get("model", model_name) if model_config else model_name
-                with Halo(text=f"Processing {agent_name}", spinner="dots"):
-                    task_result = await agent.run(task=message)
+                # Show loading spinner in chat format for this specific agent
+                if model_config:
+                    model = model_config.get("model", model_name)
+                    spinner_text = f"{identifier} [{model}]: "
+                else:
+                    spinner_text = f"{identifier} [{model_name}]: "
+                
+                # Print the prefix first, then show spinner after the colon
+                print(spinner_text, end="", flush=True)
+                with Halo(text="Processing", spinner="dots"):
+                    task_result = await agent.run(task=task_message)
+                # Clear just the spinner part, keep the prefix
+                print("\r" + spinner_text, end="", flush=True)
                 
                 # Extract usage data
                 usage_data = self._extract_usage_from_task_result(task_result)
@@ -217,20 +231,23 @@ class ChatSession:
                 # Get response content
                 response_content = self._get_response_from_task_result(task_result)
                 
-                # Display response
-                if model_config:
-                    model = model_config.get("model", model_name)
-                    identifier = get_model_identifier(i)
-                    print(f"{identifier} [{model}]: {response_content}")
-                else:
-                    identifier = get_model_identifier(i)
-                    print(f"{identifier} [{model_name}]: {response_content}")
+                # Display response (prefix already printed)
+                print(response_content)
+                
+                # Add newline between agents (except after the last one)
+                if i < len(self.agents) - 1:
+                    print()
                     
             except Exception as e:
-                identifier = get_model_identifier(i)
-                agent_name = model_config.get("model", model_name) if model_config else model_name
-                print(f"{identifier} [{agent_name}]: Error - {e}")
-        
+                print(f"Error - {e}")
+                
+                # Add newline between agents (except after the last one)
+                if i < len(self.agents) - 1:
+                    print()
+
+    async def _handle_multi_agent_response(self, message):
+        """Handle responses from multiple agents using manual round-robin."""
+        await self._process_all_agents(message)
         print()  # Final line break
     
     async def _handle_agent_discussion(self):
@@ -240,39 +257,7 @@ class ChatSession:
         # Create a prompt for agents to continue discussing among themselves
         discussion_prompt = "Continue the discussion. Share your thoughts on the topic or respond to what other agents have said."
         
-        # Process each agent individually for discussion
-        for i, agent in enumerate(self.agents):
-            model_name = self.config.models[i]
-            model_config = self.model_client_manager.get_model_config(model_name)
-            
-            try:
-                # Show loading spinner for this specific agent
-                agent_name = model_config.get("model", model_name) if model_config else model_name
-                with Halo(text=f"Agent discussing: {agent_name}", spinner="dots"):
-                    task_result = await agent.run(task=discussion_prompt)
-                
-                # Extract usage data
-                usage_data = self._extract_usage_from_task_result(task_result)
-                if usage_data:
-                    self.config.add_usage_data(usage_data)
-                
-                # Get response content
-                response_content = self._get_response_from_task_result(task_result)
-                
-                # Display response
-                if model_config:
-                    model = model_config.get("model", model_name)
-                    identifier = get_model_identifier(i)
-                    print(f"{identifier} [{model}]: {response_content}")
-                else:
-                    identifier = get_model_identifier(i)
-                    print(f"{identifier} [{model_name}]: {response_content}")
-                    
-            except Exception as e:
-                identifier = get_model_identifier(i)
-                agent_name = model_config.get("model", model_name) if model_config else model_name
-                print(f"{identifier} [{agent_name}]: Error - {e}")
-        
+        await self._process_all_agents(discussion_prompt)
         print()
     
     def _find_agent_index(self, agent_name):
