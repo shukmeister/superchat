@@ -34,6 +34,7 @@ class ChatSession:
         self.agents = []
         self.is_multi_agent = len(config.models) > 1
         self.conversation_history = []  # Shared conversation history for all agents
+        self.current_round_messages = []  # Track messages in the current round
         
     def initialize_agents(self):
         """Initialize AutoGen agents for the selected models."""
@@ -211,8 +212,8 @@ REMEMBER: You are having a real conversation with other AI agents who will actua
         agent = self.agents[0]
         model_name = self.config.models[0]
         
-        # Create current conversation including the new user message
-        current_conversation = self.conversation_history + [TextMessage(content=message, source="user")]
+        # For single agent, only pass the current user message - no context needed
+        current_conversation = [TextMessage(content=message, source="user")]
         
         # Show loading spinner while waiting for response
         with Halo(text="Processing", spinner="dots"):
@@ -243,11 +244,32 @@ REMEMBER: You are having a real conversation with other AI agents who will actua
         else:
             print(f"[{model_name}]: {response_content}\n")
     
+    def _get_sliding_context(self):
+        """Get sliding context window: just the previous round of agent responses."""
+        if not self.conversation_history:
+            return []
+        
+        # Find the last user message in history to identify the previous round
+        previous_round_messages = []
+        last_user_index = -1
+        
+        # Find the most recent user message
+        for i in range(len(self.conversation_history) - 1, -1, -1):
+            if hasattr(self.conversation_history[i], 'source') and self.conversation_history[i].source == "user":
+                last_user_index = i
+                break
+        
+        # If we found a user message, include it and all agent responses after it
+        if last_user_index >= 0:
+            previous_round_messages = self.conversation_history[last_user_index:]
+        
+        return previous_round_messages
+    
     async def _process_all_agents(self, task_message):
-        """Process a task for all agents with shared historical context."""
-        # Create conversation context for agents: history + current user message
-        # All agents get the same context (history + current question)
-        agent_context = self.conversation_history + [TextMessage(content=task_message, source="user")]
+        """Process a task for all agents with sliding context window."""
+        # Create conversation context for agents: previous round + current user message
+        # Only include the most recent agent responses (previous round) to reduce token usage
+        agent_context = self._get_sliding_context() + [TextMessage(content=task_message, source="user")]
         
         # Accumulate usage data from all agents for a single conversation round
         total_prompt_tokens = 0
