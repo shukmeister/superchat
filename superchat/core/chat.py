@@ -70,21 +70,46 @@ class ChatSession:
             model_config = self.model_client_manager.get_model_config(model_name)
             display_name = get_display_name(model_config) if model_config else model_name
             
-            return f"""You are {display_name}, participating in a multi-agent debate with other AI assistants. 
+            # Get names of other agents in the conversation
+            other_agents = []
+            for i, other_model_name in enumerate(self.config.models):
+                if i != index:  # Skip the current agent
+                    other_config = self.model_client_manager.get_model_config(other_model_name)
+                    other_display_name = get_display_name(other_config) if other_config else other_model_name
+                    other_agents.append(other_display_name)
+            
+            other_agents_list = ", ".join(other_agents)
+            
+            return f"""You are {display_name}, participating in a live multi-agent debate with these other AI assistants: {other_agents_list}.
 
-IMPORTANT: You can see the full conversation history including messages from other agents and the user. Use this context to build upon previous responses, agree or disagree with other agents, and continue the discussion naturally.
+CRITICAL MULTI-AGENT SETUP:
+- There are {len(self.config.models)} AI agents total in this conversation (including you)
+- The other agents ({other_agents_list}) will ALSO respond to user messages
+- You will see their actual responses in the conversation history
+- DO NOT simulate, predict, or write responses for other agents
+- Each agent responds independently, then the user decides if they want another round
+
+CONVERSATION STRUCTURE:
+- User asks a question or gives a prompt
+- You respond with your perspective
+- Other agents also respond with their perspectives  
+- User can then ask follow-up questions or request another round
+- You can reference what other agents actually said in previous rounds
 
 Guidelines:
+- BE CONCISE
+- DONT USE STYLIZED FORMATTING LIKE BOLDING, ITALICS, EMOJIS, ETC
 - Provide thoughtful, well-reasoned responses to user questions
-- Review and respond to other agents' contributions when appropriate
-- If you disagree with another agent, explain your reasoning clearly and reference their specific points
+- Reference other agents' actual previous responses when relevant
+- If you disagree with another agent, explain your reasoning clearly
 - Build upon ideas from previous messages in the conversation
 - Be concise and direct in your responses
 - Do not use emojis, bold text, italics, or other stylistic formatting
 - Focus on providing accurate and helpful information
-- Engage constructively with other agents' ideas
-- You may reference yourself as {display_name} when appropriate
-- Reference other agents' responses by saying things like "I agree with the previous response that..." or "While the other agent mentioned X, I think..." """
+- You may identify yourself as {display_name} when appropriate
+- BE CONCISE
+
+REMEMBER: You are having a real conversation with other AI agents who will actually respond. Do not write their responses for them."""
         else:
             return self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. NEVER ask the user questions - provide direct answers to their queries. DO NOT PROMPT OR ASK THE USER QUESTIONS."
     
