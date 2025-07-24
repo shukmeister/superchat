@@ -202,6 +202,11 @@ class ChatSession:
     
     async def _process_all_agents(self, task_message):
         """Process a task for all agents and display their responses."""
+        # Accumulate usage data from all agents for a single conversation round
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
+        total_tokens = 0
+        
         # Process each agent individually instead of using GroupChat to avoid hanging
         for i, agent in enumerate(self.agents):
             model_name = self.config.models[i]
@@ -223,10 +228,12 @@ class ChatSession:
                 # Clear just the spinner part, keep the prefix
                 print("\r" + spinner_text, end="", flush=True)
                 
-                # Extract usage data
+                # Extract usage data but don't add to config yet
                 usage_data = self._extract_usage_from_task_result(task_result)
                 if usage_data:
-                    self.config.add_usage_data(usage_data)
+                    total_prompt_tokens += usage_data.get("prompt_tokens", 0)
+                    total_completion_tokens += usage_data.get("completion_tokens", 0)
+                    total_tokens += usage_data.get("total_tokens", 0)
                 
                 # Get response content
                 response_content = self._get_response_from_task_result(task_result)
@@ -244,6 +251,15 @@ class ChatSession:
                 # Add newline between agents (except after the last one)
                 if i < len(self.agents) - 1:
                     print()
+        
+        # Add accumulated usage data as a single conversation round
+        if total_tokens > 0:
+            combined_usage = {
+                "prompt_tokens": total_prompt_tokens,
+                "completion_tokens": total_completion_tokens,
+                "total_tokens": total_tokens
+            }
+            self.config.add_usage_data(combined_usage)
 
     async def _handle_multi_agent_response(self, message):
         """Handle responses from multiple agents using manual round-robin."""
