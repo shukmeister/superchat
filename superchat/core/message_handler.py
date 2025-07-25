@@ -2,8 +2,6 @@
 
 import asyncio
 from autogen_agentchat.messages import TextMessage
-from autogen_agentchat.teams import RoundRobinGroupChat
-from autogen_agentchat.conditions import MaxMessageTermination
 from halo import Halo
 from superchat.utils.stats import extract_usage_from_task_result
 from superchat.utils.identifiers import get_model_identifier
@@ -51,80 +49,69 @@ class MessageHandler:
         else:
             print(f"[{model_name}]: {response_content}\n")
     
-    # Handle multi-agent conversation with proper turn control
-    async def handle_group_chat(self, message, is_user_initiated=True):
-        if not self.team:
-            raise RuntimeError("RoundRobinGroupChat team not initialized")
-        
-        # Add spacing before group responses
-        print()
+    # Send message to a specific team and display formatted responses
+    async def send_to_team(self, team, message):
+        """Send message to a team and handle response formatting."""
+        if not team:
+            raise RuntimeError("Team not provided")
         
         try:
-            # Handle user-initiated messages (one round per agent)
-            if is_user_initiated:
-                # Run one complete round where each agent responds once
-                with Halo(text="Processing", spinner="dots"):
-                    task_result = await self.team.run(task=message)
-                
-                # Reset team for next round to prevent conversation overflow
-                max_messages = len(self.agents) + 1
-                termination = MaxMessageTermination(max_messages=max_messages)
-                self.team = RoundRobinGroupChat(self.agents, termination_condition=termination)
-                
-            # Handle agent-initiated discussion (empty input from user)
-            else:
-                # Let agents continue discussing among themselves
-                # Allow more extended discussion (2 messages per agent)
-                termination = MaxMessageTermination(max_messages=len(self.agents) * 2)
-                temp_team = RoundRobinGroupChat(self.agents, termination_condition=termination)
-                
-                with Halo(text="Processing agent discussion", spinner="dots"):
-                    task_result = await temp_team.run(task=message)
+            # Send message to team with loading indicator
+            with Halo(text="Processing", spinner="dots"):
+                task_result = await team.run(task=message)
             
             # Process and display agent responses (filter out user message echoes)
-            agent_response_count = 0
             for msg in task_result.messages:
                 # Only display actual agent responses, not user message echoes
                 if hasattr(msg, 'source') and msg.source != "user":
-                    # Extract agent info and response content
-                    agent_name = getattr(msg, 'source', 'agent')
-                    content = getattr(msg, 'content', str(msg))
-                    
-                    # Get agent info from direct mapping (more reliable than index lookup)
-                    if agent_name in self.agent_model_mapping:
-                        agent_info = self.agent_model_mapping[agent_name]
-                        identifier = agent_info['identifier']
-                        model_name = agent_info['model_name']
-                        model_config = self.model_client_manager.get_model_config(model_name)
-                        if model_config:
-                            model = model_config.get("model", model_name)
-                            print(f"{identifier} [{model}]: {content}")
-                        else:
-                            print(f"{identifier} [{model_name}]: {content}")
-                    else:
-                        print(f"[{agent_name}]: {content}")
-                    print()
-                    agent_response_count += 1
+                    self._format_and_display_agent_response(msg)
             
             # Track token usage from all agents in this conversation
             usage_data = extract_usage_from_task_result(task_result)
             if usage_data:
                 self.config.add_usage_data(usage_data)
                 
+            return task_result
+                
         except Exception as e:
-            print(f"Group chat error: {e}")
+            print(f"Team message error: {e}")
             print()
+            raise
     
-    # Handle responses from multiple agents using RoundRobinGroupChat
-    async def handle_multi_agent_response(self, message):
-        await self.handle_group_chat(message, is_user_initiated=True)
-    
-    # Handle empty input to trigger agent discussion
-    async def handle_agent_discussion(self):
-        # Create a prompt for agents to continue discussing among themselves
-        discussion_prompt = "Continue the discussion. Share your thoughts on the topic or respond to what other agents have said."
+    # Format and display individual agent response
+    def _format_and_display_agent_response(self, msg):
+        """Format and display a single agent response with proper model identification."""
+        # Extract agent info and response content
+        agent_name = getattr(msg, 'source', 'agent')
+        content = getattr(msg, 'content', str(msg))
         
-        await self.handle_group_chat(discussion_prompt, is_user_initiated=False)
+        # Get agent info from direct mapping (more reliable than index lookup)
+        if agent_name in self.agent_model_mapping:
+            agent_info = self.agent_model_mapping[agent_name]
+            identifier = agent_info['identifier']
+            model_name = agent_info['model_name']
+            model_config = self.model_client_manager.get_model_config(model_name)
+            if model_config:
+                model = model_config.get("model", model_name)
+                print(f"{identifier} [{model}]: {content}")
+            else:
+                print(f"{identifier} [{model_name}]: {content}")
+        else:
+            print(f"[{agent_name}]: {content}")
+        print()
+    
+    # Handle responses from multiple agents using RoundRobinGroupChat (deprecated - use send_to_team)
+    async def handle_multi_agent_response(self, message):
+        """Deprecated: Use ChatSession._handle_multi_agent_conversation instead."""
+        if self.team:
+            return await self.send_to_team(self.team, message)
+        else:
+            raise RuntimeError("No team configured for multi-agent response")
+    
+    # Handle empty input to trigger agent discussion (deprecated - use ChatSession._handle_agent_discussion)
+    async def handle_agent_discussion(self):
+        """Deprecated: Use ChatSession._handle_agent_discussion instead."""
+        raise RuntimeError("Agent discussion should be handled by ChatSession")
     
     # Extract the actual response text from AutoGen TaskResult
     def _get_response_from_task_result(self, task_result):
