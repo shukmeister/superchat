@@ -18,6 +18,7 @@ import argparse
 import sys
 from superchat.ui.display import setup_loop
 from superchat.core.chat import ChatSession
+from superchat.core.setup import ChatSetup
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -54,8 +55,15 @@ def main():
     if config is None:
         return 0
     
-    # Initialize and start chat session
+    # Initialize chat session with pre-configured components
     chat_session = ChatSession(config)
+    
+    # Use ChatSetup to configure all components
+    setup = ChatSetup(config)
+    message_handler = setup.setup_complete_session()
+    chat_session.set_message_handler(message_handler)
+    
+    # Start the chat loop
     chat_session.start_chat_loop()
     
     return 0
