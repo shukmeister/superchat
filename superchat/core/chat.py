@@ -15,17 +15,16 @@ what to send, how to display responses, and when to end the session.
 """
 
 import asyncio
-from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
-from autogen_agentchat.messages import TextMessage
+from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.conditions import MaxMessageTermination
-from halo import Halo
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.parser import parse_input
 from superchat.utils.identifiers import get_model_identifier
 from superchat.utils.model_resolver import get_display_name
-from superchat.utils.stats import display_stats, display_exit_summary, extract_usage_from_task_result
+from superchat.utils.stats import display_stats, display_exit_summary
+from superchat.core.message_handler import MessageHandler
 
 
 # Chat session manager that handles both single and multi-agent conversations
@@ -38,6 +37,10 @@ class ChatSession:
         self.agents = []
         self.is_multi_agent = len(config.models) > 1
         self.team = None
+        # Maps agent names to their model info (model_name, index, identifier)
+        self.agent_model_mapping = {}
+        # Message handler for processing agent responses
+        self.message_handler = None
         
     # Initialize AutoGen agents for the selected models
     def initialize_agents(self):
@@ -45,6 +48,8 @@ class ChatSession:
             raise ValueError("At least one model required for chat session")
         
         self.agents = []
+        # Clear the mapping when reinitializing agents
+        self.agent_model_mapping = {}
         
         # Create an agent for each configured model
         for i, model_name in enumerate(self.config.models):
@@ -58,13 +63,22 @@ class ChatSession:
             # Get debate-specific system prompt for multi-agent or regular prompt for single agent
             system_prompt = self.get_system_prompt(model_name, i, self.is_multi_agent)
             
+            agent_name = f"agent_{safe_name}_{i}"
             agent = AssistantAgent(
-                name=f"agent_{safe_name}_{i}",
+                name=agent_name,
                 model_client=model_client,
                 system_message=system_prompt
             )
             
             self.agents.append(agent)
+            
+            # Store mapping from agent name to model info for easy lookup
+            identifier = get_model_identifier(i)
+            self.agent_model_mapping[agent_name] = {
+                'model_name': model_name,
+                'index': i,
+                'identifier': identifier
+            }
         
         # Create RoundRobinGroupChat for multi-agent mode
         if self.is_multi_agent:
@@ -72,6 +86,16 @@ class ChatSession:
             max_messages = len(self.agents) + 1  # +1 for the user message
             termination = MaxMessageTermination(max_messages=max_messages)
             self.team = RoundRobinGroupChat(self.agents, termination_condition=termination)
+        
+        # Initialize message handler with all necessary dependencies
+        self.message_handler = MessageHandler(
+            self.config, 
+            self.agents, 
+            self.model_client_manager, 
+            self.agent_model_mapping
+        )
+        # Pass the team reference to message handler for multi-agent mode
+        self.message_handler.team = self.team
     
     # Get appropriate system prompt for single or multi-agent mode
     def get_system_prompt(self, model_name, index, is_multi_agent):
@@ -178,7 +202,7 @@ REMEMBER: You are having a real conversation with other AI agents who will actua
                 if parsed['type'] == 'empty':
                     if self.is_multi_agent:
                         # Empty input triggers agent discussion in multi-agent mode
-                        await self._handle_agent_discussion()
+                        await self.message_handler.handle_agent_discussion()
                     continue
                     
                 if parsed['type'] == 'command':
@@ -203,9 +227,9 @@ REMEMBER: You are having a real conversation with other AI agents who will actua
                     print()  # Add single line break after user message
                     try:
                         if self.is_multi_agent:
-                            await self._handle_multi_agent_response(parsed['message'])
+                            await self.message_handler.handle_multi_agent_response(parsed['message'])
                         else:
-                            await self._handle_single_agent_response(parsed['message'])
+                            await self.message_handler.handle_single_agent_response(parsed['message'])
                     except Exception as e:
                         print(f"Error: {e}\n")
                     
@@ -216,128 +240,11 @@ REMEMBER: You are having a real conversation with other AI agents who will actua
                 print("\nTerminating connection")  
                 break
     
-    # Handle response from single agent (no group chat needed)
-    async def _handle_single_agent_response(self, message):
-        agent = self.agents[0]
-        model_name = self.config.models[0]
-        
-        # For single agent, only pass the current user message - no context needed
-        current_conversation = [TextMessage(content=message, source="user")]
-        
-        
-        # Show loading spinner while waiting for response
-        with Halo(text="Processing", spinner="dots"):
-            task_result = await agent.run(task=current_conversation)
-        
-        # Extract usage data from TaskResult
-        usage_data = extract_usage_from_task_result(task_result)
-        if usage_data:
-            self.config.add_usage_data(usage_data)
-        
-        # Get the response content from the last message
-        response_content = self._get_response_from_task_result(task_result)
-        
-        # For single agent mode, no need to track conversation history
-        
-        model_config = self.model_client_manager.get_model_config(model_name)
-        if model_config:
-            model = model_config.get("model", model_name)
-            # Get Russian letter identifier
-            model_index = self.config.models.index(model_name) if model_name in self.config.models else 0
-            identifier = get_model_identifier(model_index)
-            print(f"{identifier} [{model}]: {response_content}\n")
-        else:
-            print(f"[{model_name}]: {response_content}\n")
     
-    # Handle multi-agent conversation with proper turn control
-    async def _handle_group_chat(self, message, is_user_initiated=True):
-        if not self.team:
-            raise RuntimeError("RoundRobinGroupChat team not initialized")
-        
-        print()  # Add line break before group chat
-        
-        try:
-            if is_user_initiated:
-                # User provided input - run exactly one round (each agent responds once)
-                with Halo(text="Processing", spinner="dots"):
-                    task_result = await self.team.run(task=message)
-                
-                # Reset the team for next round by creating a new instance
-                max_messages = len(self.agents) + 1
-                termination = MaxMessageTermination(max_messages=max_messages)
-                self.team = RoundRobinGroupChat(self.agents, termination_condition=termination)
-                
-            else:
-                # Empty input - let agents continue discussing
-                # Allow each agent one more exchange (2 messages per agent)
-                termination = MaxMessageTermination(max_messages=len(self.agents) * 2)
-                temp_team = RoundRobinGroupChat(self.agents, termination_condition=termination)
-                
-                with Halo(text="Processing agent discussion", spinner="dots"):
-                    task_result = await temp_team.run(task=message)
-            
-            # Display only the new agent responses (skip the user message echo)
-            agent_response_count = 0
-            for msg in task_result.messages:
-                if hasattr(msg, 'source') and msg.source != "user":
-                    # This is an agent response - display it
-                    agent_name = getattr(msg, 'source', 'agent')
-                    content = getattr(msg, 'content', str(msg))
-                    
-                    # Find which agent this is and get identifier
-                    agent_index = self._find_agent_index_by_name(agent_name)
-                    if agent_index >= 0:
-                        identifier = get_model_identifier(agent_index)
-                        model_name = self.config.models[agent_index]
-                        model_config = self.model_client_manager.get_model_config(model_name)
-                        if model_config:
-                            model = model_config.get("model", model_name)
-                            print(f"{identifier} [{model}]: {content}")
-                        else:
-                            print(f"{identifier} [{model_name}]: {content}")
-                    else:
-                        print(f"[{agent_name}]: {content}")
-                    print()
-                    agent_response_count += 1
-            
-            # Extract usage data from the group chat result
-            usage_data = extract_usage_from_task_result(task_result)
-            if usage_data:
-                self.config.add_usage_data(usage_data)
-                
-        except Exception as e:
-            print(f"Group chat error: {e}")
-            print()
-    
-    # Find the index of an agent by matching its name
-    def _find_agent_index_by_name(self, agent_name):
-        for i, agent in enumerate(self.agents):
-            if agent.name == agent_name:
-                return i
-        return -1
 
-    # Handle responses from multiple agents using RoundRobinGroupChat
-    async def _handle_multi_agent_response(self, message):
-        await self._handle_group_chat(message, is_user_initiated=True)
-    
-    # Handle empty input to trigger agent discussion
-    async def _handle_agent_discussion(self):
-        # Create a prompt for agents to continue discussing among themselves
-        discussion_prompt = "Continue the discussion. Share your thoughts on the topic or respond to what other agents have said."
-        
-        await self._handle_group_chat(discussion_prompt, is_user_initiated=False)
     
     
-    # Extract the actual response text from AutoGen TaskResult
-    def _get_response_from_task_result(self, task_result):
-        # Get the last message which should be the assistant's response
-        if task_result.messages:
-            last_message = task_result.messages[-1]
-            if hasattr(last_message, 'content'):
-                return last_message.content
-            elif hasattr(last_message, 'text'):
-                return last_message.text
-        return "No response received"
+    
     
     # Display detailed session statistics including token counts and costs
     def _display_stats(self):
