@@ -23,12 +23,12 @@ class MessageHandler:
         agent = self.agents[0]
         model_name = self.config.models[0]
         
-        # Create conversation with just the current user message (no history tracking)
-        current_conversation = [TextMessage(content=message, source="user")]
+        # Create new message for agent (agent maintains its own conversation history)  
+        new_message = TextMessage(content=message, source="user")
         
         # Get agent response with loading indicator
         with Halo(text="Processing", spinner="dots"):
-            task_result = await agent.run(task=current_conversation)
+            task_result = await agent.run(task=[new_message])
         
         # Track token usage for stats
         usage_data = extract_usage_from_task_result(task_result)

@@ -2,7 +2,6 @@
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
-from autogen_agentchat.conditions import MaxMessageTermination
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.identifiers import get_model_identifier
 from superchat.utils.model_resolver import get_display_name
@@ -106,10 +105,8 @@ class ChatSetup:
         if not is_multi_agent:
             return None
         
-        # Set up termination to stop after one complete round (each agent responds once)
-        max_messages = len(agents) + 1  # +1 for the user message
-        termination = MaxMessageTermination(max_messages=max_messages)
-        return RoundRobinGroupChat(agents, termination_condition=termination)
+        # Set up team with max_turns = number of agents (each agent responds once per user message)
+        return RoundRobinGroupChat(agents, max_turns=len(agents))
     
     # Get appropriate system prompt for single or multi-agent mode
     def get_system_prompt(self, model_name, index, is_multi_agent):
