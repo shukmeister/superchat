@@ -1,4 +1,4 @@
-# Chat session setup and initialization utilities
+# Complete chat session setup and component initialization utilities
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
@@ -11,9 +11,9 @@ from superchat.core.message_handler import MessageHandler
 
 
 class ChatSetup:
-    """Handles all chat session initialization and configuration logic."""
+    """Handles complete chat session initialization and component configuration."""
     
-    # Initialize setup handler with session configuration
+    # Initialize setup handler with session configuration  
     def __init__(self, config):
         self.config = config
         self.model_client_manager = ModelClientManager()
@@ -44,9 +44,9 @@ class ChatSetup:
         
         return message_handler
     
-    # Initialize all chat components and return them as a structured result
+    # Initialize all chat components and return them as a structured result (legacy method)
     def initialize_chat_components(self):
-        """Returns (agents, agent_mapping, team) tuple for ChatSession."""
+        """Returns (agents, agent_mapping, team) tuple. Deprecated - use setup_complete_session instead."""
         if not self.config.models:
             raise ValueError("At least one model required for chat session")
         

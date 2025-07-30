@@ -20,6 +20,7 @@ import time
 class SessionConfig:
     """Manages in-memory configuration for a chat session."""
     
+    # Initialize session configuration with default values
     def __init__(self):
         self.models = []
         self.voice_enabled = False
@@ -34,6 +35,7 @@ class SessionConfig:
         self.total_tokens = 0
         self.conversation_rounds = 0
     
+    # Add a model to the session configuration
     def add_model(self, model_name):
         """Add a model to the session if not already present."""
         if model_name not in self.models:
@@ -41,6 +43,7 @@ class SessionConfig:
             return True
         return False
     
+    # Remove a model from the session configuration
     def remove_model(self, model_name):
         """Remove a model from the session."""
         if model_name in self.models:
@@ -50,10 +53,12 @@ class SessionConfig:
             return True
         return False
     
+    # Configure voice output setting
     def set_voice_enabled(self, enabled):
         """Enable or disable voice output."""
         self.voice_enabled = enabled
     
+    # Start the session and begin timing
     def start_session(self):
         """Mark session as active and set current model."""
         if self.models:
@@ -63,11 +68,13 @@ class SessionConfig:
             return True
         return False
     
+    # Stop the session and clean up state
     def stop_session(self):
         """Mark session as inactive."""
         self.session_active = False
         self.current_model = None
     
+    # Track token usage from a conversation round
     def add_usage_data(self, usage_data):
         """Add token usage data from a conversation round."""
         self.total_input_tokens += usage_data.get("prompt_tokens", 0)
@@ -75,12 +82,14 @@ class SessionConfig:
         self.total_tokens += usage_data.get("total_tokens", 0)
         self.conversation_rounds += 1
     
+    # Calculate how long the session has been running
     def get_session_duration(self):
         """Get session duration in seconds."""
         if self.session_start_time:
             return time.time() - self.session_start_time
         return 0
     
+    # Get formatted session statistics
     def get_stats(self):
         """Get session statistics."""
         duration = self.get_session_duration()
@@ -96,6 +105,7 @@ class SessionConfig:
             "total_tokens": self.total_tokens
         }
     
+    # Export configuration as dictionary
     def get_config_dict(self):
         """Return configuration as dictionary."""
         return {
@@ -105,20 +115,24 @@ class SessionConfig:
             'current_model': self.current_model
         }
     
+    # Check if session has required configuration to start
     def is_valid_for_start(self):
         """Check if configuration is valid to start a session."""
         return len(self.models) > 0
     
+    # Determine if this is a multi-agent conversation
     def is_multi_agent(self):
         """Check if session has multiple agents."""
         return len(self.models) > 1
     
+    # Get appropriate system prompt based on agent count
     def get_system_prompt(self):
         """Get the appropriate system prompt based on agent count."""
         if self.is_multi_agent():
             return self.debate_prompt
         return ""
     
+    # Create system prompt for multi-agent debate scenarios
     def _create_debate_prompt(self):
         """Create the debate background prompt for multi-agent conversations."""
         return """You are participating in a multi-agent discussion with a user and other AI agents. Your role is to contribute to a collaborative, truth-seeking conversation by following these guidelines:

@@ -27,6 +27,7 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 class ModelClientManager:
     """Manages model clients using modern AutoGen architecture."""
     
+    # Initialize model client manager and load configuration
     def __init__(self):
         self.models_config = None
         self.api_key = None
@@ -62,6 +63,7 @@ class ModelClientManager:
                 except Exception:
                     pass
     
+    # Validate that API key is properly configured
     def validate_setup(self):
         """Validate that API key is available."""
         if not self.api_key:
@@ -81,18 +83,21 @@ class ModelClientManager:
             return False
         return True
     
+    # Get list of all configured model names
     def get_available_models(self):
         """Get list of available model names."""
         if not self.models_config:
             return []
         return list(self.models_config["models"].keys())
     
+    # Get configuration details for a specific model
     def get_model_config(self, model_name):
         """Get configuration for a specific model."""
         if not self.models_config or model_name not in self.models_config["models"]:
             return None
         return self.models_config["models"][model_name]
     
+    # Create AutoGen client for communicating with a specific model
     def create_model_client(self, model_name, skip_validation=False):
         """Create OpenAI chat completion client for the specified model."""
         if not skip_validation and not self.validate_setup():

@@ -1,4 +1,4 @@
-# Message handling utilities for chat sessions
+# Pure AI message processing and response formatting utilities
 
 import asyncio
 from autogen_agentchat.messages import TextMessage
@@ -8,17 +8,17 @@ from superchat.utils.identifiers import get_model_identifier
 
 
 class MessageHandler:
-    """Handles all message processing and agent response logic."""
+    """Handles pure AI message processing and response formatting (no conversation coordination)."""
     
-    # Initialize message handler with references to chat session components
+    # Initialize message handler with pre-configured components from setup
     def __init__(self, config, agents, model_client_manager, agent_model_mapping):
         self.config = config
         self.agents = agents
         self.model_client_manager = model_client_manager
         self.agent_model_mapping = agent_model_mapping
-        self.team = None  # Will be set by chat session for multi-agent mode
+        self.team = None  # Will be set by setup for multi-agent mode
     
-    # Handle response from single agent (no group chat needed)
+    # Process single agent message and display formatted response
     async def handle_single_agent_response(self, message):
         agent = self.agents[0]
         model_name = self.config.models[0]
@@ -49,7 +49,7 @@ class MessageHandler:
         else:
             print(f"[{model_name}]: {response_content}\n")
     
-    # Send message to a specific team and display formatted responses
+    # Process team message and display all agent responses
     async def send_to_team(self, team, message):
         """Send message to a team and handle response formatting."""
         if not team:
@@ -78,7 +78,7 @@ class MessageHandler:
             print()
             raise
     
-    # Format and display individual agent response
+    # Format and display individual agent response with model identification
     def _format_and_display_agent_response(self, msg):
         """Format and display a single agent response with proper model identification."""
         # Extract agent info and response content
@@ -100,7 +100,7 @@ class MessageHandler:
             print(f"[{agent_name}]: {content}")
         print()
     
-    # Handle responses from multiple agents using RoundRobinGroupChat (deprecated - use send_to_team)
+    # Legacy method - conversation coordination now handled by ChatSession
     async def handle_multi_agent_response(self, message):
         """Deprecated: Use ChatSession._handle_multi_agent_conversation instead."""
         if self.team:
@@ -108,7 +108,7 @@ class MessageHandler:
         else:
             raise RuntimeError("No team configured for multi-agent response")
     
-    # Handle empty input to trigger agent discussion (deprecated - use ChatSession._handle_agent_discussion)
+    # Legacy method - agent discussions now handled by ChatSession
     async def handle_agent_discussion(self):
         """Deprecated: Use ChatSession._handle_agent_discussion instead."""
         raise RuntimeError("Agent discussion should be handled by ChatSession")

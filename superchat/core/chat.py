@@ -1,17 +1,19 @@
-"""Chat session management using modern AutoGen architecture.
+"""Chat session runtime management using modern AutoGen architecture.
 
-This module is the "conversation manager" - it handles the actual chat flow and user interaction.
-While model_client.py handles the technical API calls, this module manages the conversation experience.
+This module is the "conversation coordinator" - it handles runtime chat flow and user interaction.
+While setup.py initializes components and message_handler.py processes AI communications, 
+this module coordinates the conversation experience and manages team lifecycles.
 
 Key responsibilities:
-- Initialize AutoGen agents with the selected models
+- Coordinate runtime chat flow and user interaction
 - Run the interactive chat loop (the >> prompt you see)
 - Process user input (regular messages vs commands like /exit)
-- Send messages to AI models and display their responses
-- Handle conversation state and flow control
+- Manage AutoGen team lifecycles for multi-agent conversations
+- Control conversation flow between user and AI agents
+- Handle session state and statistics during runtime
 
-Think of it as the "conversation brain" - it decides when to call the AI,
-what to send, how to display responses, and when to end the session.
+Think of it as the "conversation coordinator" - it receives pre-configured components
+from setup.py and orchestrates the runtime conversation experience.
 """
 
 import asyncio
@@ -25,27 +27,28 @@ from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.conditions import MaxMessageTermination
 
 
-# Chat session manager that handles runtime chat interaction
+# Chat session coordinator that manages runtime conversation flow
 class ChatSession:
     
-    # Initialize chat session with pre-configured components
+    # Initialize chat session to receive pre-configured components from setup
     def __init__(self, config: SessionConfig):
         self.config = config
         self.model_client_manager = ModelClientManager()
         self.is_multi_agent = len(config.models) > 1
-        # Message handler will be set up by setup.py
+        # Message handler will be injected by setup.py after initialization
         self.message_handler = None
     
-    # Set the pre-configured message handler from setup
+    # Inject pre-configured message handler from setup
     def set_message_handler(self, message_handler):
         self.message_handler = message_handler
     
-    # Start the interactive chat loop with >> prompt
+    # Start the interactive chat loop with model display and >> prompt
     def start_chat_loop(self):
-        # Validate that message handler was configured
+        # Validate that components were properly configured by setup
         if not self.message_handler:
             raise RuntimeError("Message handler not configured. Use setup.py to initialize session.")
         
+        # Display session information based on single or multi-agent mode
         if self.is_multi_agent:
             print("Starting multi-agent debate with:")
             for i, model_name in enumerate(self.config.models):
@@ -67,22 +70,25 @@ class ChatSession:
                 print(f"Starting chat with [{model_name}]")
         print()
         
-        # Run the async chat loop
+        # Start the main runtime conversation loop
         asyncio.run(self._async_chat_loop())
     
-    # Main async chat loop that processes user input and handles responses
+    # Main async chat loop that coordinates user input and conversation flow  
     async def _async_chat_loop(self):
         while True:
             try:
+                # Get and parse user input
                 user_input = input(">> ")
                 parsed = parse_input(user_input)
                 
+                # Handle empty input (triggers agent discussion in multi-agent mode)
                 if parsed['type'] == 'empty':
                     if self.is_multi_agent:
                         # Empty input triggers agent discussion in multi-agent mode
                         await self._handle_agent_discussion()
                     continue
-                    
+                
+                # Handle chat commands (/exit, /stats, etc.)    
                 if parsed['type'] == 'command':
                     if parsed['command'] == 'exit':
                         print()
@@ -101,8 +107,8 @@ class ChatSession:
                         print(f"Unknown command: /{parsed['command']}")
                         print()
                         continue
-                        
-                # Handle regular messages
+                
+                # Handle regular user messages to AI agents        
                 if parsed['type'] == 'message':
                     print()  # Add single line break after user message
                     try:
@@ -120,7 +126,7 @@ class ChatSession:
                 print("\nTerminating connection")  
                 break
     
-    # Team management methods for multi-agent conversations
+    # Team lifecycle management methods for multi-agent conversations
     def _reset_team_for_next_round(self):
         """Reset team with standard termination conditions for next user message."""
         if not self.message_handler or not hasattr(self.message_handler, 'agents'):
@@ -131,6 +137,7 @@ class ChatSession:
         termination = MaxMessageTermination(max_messages=max_messages)
         self.message_handler.team = RoundRobinGroupChat(agents, termination_condition=termination)
     
+    # Create temporary team for extended agent discussions
     def _create_discussion_team(self):
         """Create temporary team for agent-only discussions with extended termination."""
         if not self.message_handler or not hasattr(self.message_handler, 'agents'):
@@ -141,6 +148,7 @@ class ChatSession:
         termination = MaxMessageTermination(max_messages=len(agents) * 2)
         return RoundRobinGroupChat(agents, termination_condition=termination)
     
+    # Orchestrate multi-agent conversation with team lifecycle management
     async def _handle_multi_agent_conversation(self, message):
         """Orchestrate multi-agent conversation with proper team management."""
         if not self.message_handler or not self.message_handler.team:
@@ -161,6 +169,7 @@ class ChatSession:
             print(f"Multi-agent conversation error: {e}")
             print()
     
+    # Manage agent-only discussions when user provides empty input
     async def _handle_agent_discussion(self):
         """Manage agent-only discussions when user sends empty input."""
         discussion_prompt = "Continue the discussion. Share your thoughts on the topic or respond to what other agents have said."
