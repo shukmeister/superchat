@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.7] - 2025-07-31
+- Added debug mode to show more data about AI messages (-d in CLI and /debug in setup)
+
 ## [0.6] - 2025-07-31
 - Major architecture refactor of multi agent chat code
 	- Refactored into modular components for better maintainability

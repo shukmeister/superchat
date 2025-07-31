@@ -38,12 +38,11 @@ def create_parser():
         help='Enable debug mode for detailed message and token tracking'
     )
 
-    # commented out voice until we need it later    
-    # parser.add_argument(
-    #     '--voice', '-v',
-    #     action='store_true',
-    #     help='Enable voice output mode'
-    # )
+    parser.add_argument(
+        '--voice', '-v',
+        action='store_true',
+        help='Enable voice output mode'
+    )
     
     return parser
 
