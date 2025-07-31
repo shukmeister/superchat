@@ -26,7 +26,6 @@ class SessionConfig:
         self.voice_enabled = False
         self.session_active = False
         self.current_model = None
-        self.debate_prompt = self._create_debate_prompt()
         
         # Token tracking
         self.session_start_time = None
@@ -128,29 +127,8 @@ class SessionConfig:
     # Get appropriate system prompt based on agent count
     def get_system_prompt(self):
         """Get the appropriate system prompt based on agent count."""
-        if self.is_multi_agent():
-            return self.debate_prompt
         return ""
     
-    # Create system prompt for multi-agent debate scenarios
-    def _create_debate_prompt(self):
-        """Create the debate background prompt for multi-agent conversations."""
-        return """You are participating in a multi-agent discussion with a user and other AI agents. Your role is to contribute to a collaborative, truth-seeking conversation by following these guidelines:
-
-- Take turns sharing well-researched opinions on the given topic
-- If you lack knowledge on something, research it thoroughly or acknowledge your uncertainty
-- Always say "I don't know" rather than providing false or uncertain information
-- Only ask questions to other AI agents when you need additional information from them or want to question their reasoning during the debate
-- Never ask questions to the user - provide direct responses to their statements
-- Focus on finding truth through solid reasoning and evidence-based arguments
-- Provide clear reasoning for supporting or challenging other agents' opinions
-- Break down complex topics using first principles thinking
-- Always verify and double-check your responses before sharing
-- Be maximally truth-seeking in all your contributions
-- Be concise and straightforward in your responses
-- Do not use emojis, bold text, italics, or other stylistic formatting
-
-The goal is constructive debate that leads to better understanding and well-reasoned conclusions."""
     
     def __str__(self):
         return f"SessionConfig(models={self.models}, voice={self.voice_enabled}, active={self.session_active})"

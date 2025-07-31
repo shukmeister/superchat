@@ -2,6 +2,7 @@
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_core.model_context import BufferedChatCompletionContext
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.identifiers import get_model_identifier
 from superchat.utils.model_resolver import get_display_name
@@ -76,9 +77,14 @@ class ChatSetup:
             system_prompt = self.get_system_prompt(model_name, i, is_multi_agent)
             
             agent_name = f"agent_{safe_name}_{i}"
+            
+            # Create buffered context to limit conversation history to last 5 messages
+            buffered_context = BufferedChatCompletionContext(buffer_size=5)
+            
             agent = AssistantAgent(
                 name=agent_name,
                 model_client=model_client,
+                model_context=buffered_context,
                 system_message=system_prompt
             )
             
@@ -126,35 +132,20 @@ class ChatSetup:
             
             other_agents_list = ", ".join(other_agents)
             
-            return f"""You are {display_name}, participating in a live multi-agent debate with these other AI assistants: {other_agents_list}.
+            return f"""You are {display_name} in a multi-agent conversation with {other_agents_list}.
 
-CRITICAL MULTI-AGENT SETUP:
-- There are {len(self.config.models)} AI agents total in this conversation (including you)
-- The other agents ({other_agents_list}) will ALSO respond to user messages
-- You will see their actual responses in the conversation history
-- DO NOT simulate, predict, or write responses for other agents
-- Each agent responds independently, then the user decides if they want another round
+Multi-agent rules:
+- Other agents will also respond to user messages
+- Don't simulate or write responses for other agents
+- Reference others' actual previous responses when relevant
 
-CONVERSATION STRUCTURE:
-- User asks a question or gives a prompt
-- You respond with your perspective
-- Other agents also respond with their perspectives  
-- User can then ask follow-up questions or request another round
-- You can reference what other agents actually said in previous rounds
-
-Guidelines:
-- BE CONCISE
-- DONT USE STYLIZED FORMATTING LIKE BOLDING, ITALICS, EMOJIS, ETC
-- Provide thoughtful, well-reasoned responses to user questions
-- Reference other agents' actual previous responses when relevant
-- If you disagree with another agent, explain your reasoning clearly
-- Build upon ideas from previous messages in the conversation
-- Be concise and direct in your responses
-- Do not use emojis, bold text, italics, or other stylistic formatting
-- Focus on providing accurate and helpful information
-- You may identify yourself as {display_name} when appropriate
-- BE CONCISE
-
-REMEMBER: You are having a real conversation with other AI agents who will actually respond. Do not write their responses for them."""
+Response guidelines:
+- Be concise and direct
+- No bold/italics/emojis formatting
+- Say "I don't know" rather than guessing
+- Think from first principles
+- Only ask questions to other agents when needed for reasoning
+- If you disagree with another agent, explain your reasoning
+- Identify yourself as {display_name} when appropriate"""
         else:
-            return self.config.get_system_prompt() or "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. NEVER ask the user questions - provide direct answers to their queries. DO NOT PROMPT OR ASK THE USER QUESTIONS."
+            return "You are a helpful assistant that answers questions accurately and concisely. Be concise and straightforward in your responses. Do not use emojis, bold text, italics, or other stylistic formatting. NEVER ask the user questions - provide direct answers to their queries. DO NOT PROMPT OR ASK THE USER QUESTIONS."

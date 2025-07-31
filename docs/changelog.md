@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6] - 2025-07-31
+- Major architecture refactor of multi agent chat code
+	- Refactored into modular components for better maintainability
+	- Added modern AutoGen with proper multi-agent support
+	- Fixed multi-agent conversations so agents can see and reference each other's responses
+- Streamlined system prompts to reduce context usage
+- Added conversation history limit of 5 messages to prevent context overflow
+
 ## [0.5] - 2025-07-23
 - Refactored chat functionality to use AutoGen agents for 1:1 conversations with unified usage tracking
 - Added intelligent fuzzy matching for model selection with auto-selection
