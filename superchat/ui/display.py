@@ -171,7 +171,7 @@ def setup_loop(debug_enabled=False):
                     print("  No models selected")
                 
                 # Show debug mode status
-                debug_status = "online" if config.debug_enabled else "offline"
+                debug_status = "enabled" if config.debug_enabled else "disabled"
                 print(f"- Debug mode: {debug_status}")
                 print()
                 

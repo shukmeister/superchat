@@ -28,11 +28,11 @@ class MessageHandler:
         # Create new message for agent (agent maintains its own conversation history)  
         new_message = TextMessage(content=message, source="user")
         
-        # Debug: Log outgoing message and context
+        # Debug: Log full context before API call
         if debug_logger.enabled:
-            # Get the agent's conversation history for context
-            conversation_messages = [new_message]  # The current message being sent
-            debug_logger.log_api_call_start(model_name, conversation_messages)
+            # Get agent mapping info for debugging
+            agent_mapping_info = self.agent_model_mapping.get(agent.name, {})
+            await debug_logger.log_full_context(agent, message, agent_mapping_info)
         
         # Get agent response with loading indicator
         with Halo(text="Processing", spinner="dots"):
@@ -46,10 +46,6 @@ class MessageHandler:
         # Extract the actual response text
         response_content = self._get_response_from_task_result(task_result)
         
-        # Debug: Log response and real token usage
-        if debug_logger.enabled:
-            debug_logger.log_api_call_end(response_content, usage_data)
-        
         # Display response with proper model identifier and formatting
         model_config = self.model_client_manager.get_model_config(model_name)
         if model_config:
@@ -60,6 +56,10 @@ class MessageHandler:
             print(f"{identifier} [{model}]: {response_content}\n")
         else:
             print(f"[{model_name}]: {response_content}\n")
+        
+        # Debug: Log response with comprehensive breakdown after displaying response
+        if debug_logger.enabled:
+            debug_logger.log_response_with_breakdown(response_content, usage_data, task_result)
     
     # Process team message and display all agent responses
     async def send_to_team(self, team, message):
@@ -70,9 +70,12 @@ class MessageHandler:
         debug_logger = get_debug_logger()
         
         try:
-            # Debug: Log multi-agent conversation start
+            # Debug: Log multi-agent team context (could log each agent individually if needed)
             if debug_logger.enabled:
-                debug_logger.log_api_call_start("MULTI-AGENT TEAM", [message])
+                debug_logger._log_separator("MULTI-AGENT TEAM DEBUG")
+                print(f"Team Size: {len(self.agents)} agents")
+                print(f"Message: {message}")
+                debug_logger._log_separator_end()
             
             # Send message to team with loading indicator
             with Halo(text="Processing", spinner="dots"):
@@ -83,7 +86,13 @@ class MessageHandler:
             if usage_data:
                 self.config.add_usage_data(usage_data)
             
-            # Debug: Log multi-agent conversation end with usage data
+            # Process and display agent responses (filter out user message echoes)
+            for msg in task_result.messages:
+                # Only display actual agent responses, not user message echoes
+                if hasattr(msg, 'source') and msg.source != "user":
+                    self._format_and_display_agent_response(msg)
+            
+            # Debug: Log comprehensive multi-agent response breakdown after displaying responses
             if debug_logger.enabled:
                 all_responses = []
                 for msg in task_result.messages:
@@ -93,13 +102,7 @@ class MessageHandler:
                         all_responses.append(f"[{agent_name}]: {content}")
                 
                 combined_response = "\n".join(all_responses)
-                debug_logger.log_api_call_end(combined_response, usage_data)
-            
-            # Process and display agent responses (filter out user message echoes)
-            for msg in task_result.messages:
-                # Only display actual agent responses, not user message echoes
-                if hasattr(msg, 'source') and msg.source != "user":
-                    self._format_and_display_agent_response(msg)
+                debug_logger.log_response_with_breakdown(combined_response, usage_data, task_result)
                 
             return task_result
                 
