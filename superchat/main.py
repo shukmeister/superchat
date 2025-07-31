@@ -32,6 +32,12 @@ def create_parser():
         help='Add a model to the chat (can be used multiple times)'
     )
 
+    parser.add_argument(
+        '--debug', '-d',
+        action='store_true',
+        help='Enable debug mode for detailed message and token tracking'
+    )
+
     # commented out voice until we need it later    
     # parser.add_argument(
     #     '--voice', '-v',
@@ -49,8 +55,8 @@ def main():
     if args.model:
         print("CLI mode not yet implemented - using setup mode")
     
-    # Enter setup loop
-    config = setup_loop()
+    # Enter setup loop with debug flag
+    config = setup_loop(debug_enabled=args.debug)
     
     if config is None:
         return 0

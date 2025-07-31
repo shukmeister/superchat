@@ -21,11 +21,12 @@ class SessionConfig:
     """Manages in-memory configuration for a chat session."""
     
     # Initialize session configuration with default values
-    def __init__(self):
+    def __init__(self, debug_enabled=False):
         self.models = []
         self.voice_enabled = False
         self.session_active = False
         self.current_model = None
+        self.debug_enabled = debug_enabled
         
         # Token tracking
         self.session_start_time = None
@@ -56,6 +57,15 @@ class SessionConfig:
     def set_voice_enabled(self, enabled):
         """Enable or disable voice output."""
         self.voice_enabled = enabled
+    
+    # Configure debug mode setting
+    def set_debug_enabled(self, enabled):
+        """Enable or disable debug mode."""
+        self.debug_enabled = enabled
+        
+        # Update global debug logger
+        from superchat.utils.debug import set_debug_enabled
+        set_debug_enabled(enabled)
     
     # Start the session and begin timing
     def start_session(self):
@@ -111,7 +121,8 @@ class SessionConfig:
             'models': self.models.copy(),
             'voice': self.voice_enabled,
             'active': self.session_active,
-            'current_model': self.current_model
+            'current_model': self.current_model,
+            'debug': self.debug_enabled
         }
     
     # Check if session has required configuration to start
@@ -131,4 +142,4 @@ class SessionConfig:
     
     
     def __str__(self):
-        return f"SessionConfig(models={self.models}, voice={self.voice_enabled}, active={self.session_active})"
+        return f"SessionConfig(models={self.models}, voice={self.voice_enabled}, active={self.session_active}, debug={self.debug_enabled})"

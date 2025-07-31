@@ -35,12 +35,16 @@ def display_banner():
 
 
 
-def setup_loop():
+def setup_loop(debug_enabled=False):
     """Main setup loop for configuring chat parameters."""
     display_banner()
     
+    # Initialize debug logger with CLI flag
+    from superchat.utils.debug import initialize_debug_logger
+    initialize_debug_logger(debug_enabled)
+    
     # Initialize session config and model client manager
-    config = SessionConfig()
+    config = SessionConfig(debug_enabled=debug_enabled)
     model_manager = ModelClientManager()
     
     # Check for API key on startup
@@ -97,6 +101,7 @@ def setup_loop():
                 print("  /remove <name> - Remove a model from the chat")
                 print("  /list - Show available models")
                 print("  /status - Show current configuration")
+                print("  /debug - Toggle debug mode for detailed message/token tracking")
                 print("  /start - Begin the chat session")
                 print("  /help - Show this help")
                 print("  /exit - Exit superchat")
@@ -164,6 +169,10 @@ def setup_loop():
                             print(f"- Model {identifier}: {model_key}")
                 else:
                     print("  No models selected")
+                
+                # Show debug mode status
+                debug_status = "online" if config.debug_enabled else "offline"
+                print(f"- Debug mode: {debug_status}")
                 print()
                 
             elif command == "model":
@@ -328,6 +337,18 @@ def setup_loop():
                         print(f"Model {model_key} was not in configuration")
                     print()
             
+            elif command == "debug":
+                # Toggle debug mode
+                current_debug = config.debug_enabled
+                config.set_debug_enabled(not current_debug)
+                print()
+                if config.debug_enabled:
+                    print("Debug mode: enabled")
+                    print("You will see detailed message and token information during chat.")
+                else:
+                    print("Debug mode: disabled")
+                print()
+                    
             elif command == "stats":
                 print()
                 print("The /stats command is only available during chat sessions.")

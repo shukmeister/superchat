@@ -5,6 +5,7 @@ from autogen_agentchat.messages import TextMessage
 from halo import Halo
 from superchat.utils.stats import extract_usage_from_task_result
 from superchat.utils.identifiers import get_model_identifier
+from superchat.utils.debug import get_debug_logger
 
 
 class MessageHandler:
@@ -22,9 +23,16 @@ class MessageHandler:
     async def handle_single_agent_response(self, message):
         agent = self.agents[0]
         model_name = self.config.models[0]
+        debug_logger = get_debug_logger()
         
         # Create new message for agent (agent maintains its own conversation history)  
         new_message = TextMessage(content=message, source="user")
+        
+        # Debug: Log outgoing message and context
+        if debug_logger.enabled:
+            # Get the agent's conversation history for context
+            conversation_messages = [new_message]  # The current message being sent
+            debug_logger.log_api_call_start(model_name, conversation_messages)
         
         # Get agent response with loading indicator
         with Halo(text="Processing", spinner="dots"):
@@ -37,6 +45,10 @@ class MessageHandler:
         
         # Extract the actual response text
         response_content = self._get_response_from_task_result(task_result)
+        
+        # Debug: Log response and real token usage
+        if debug_logger.enabled:
+            debug_logger.log_api_call_end(response_content, usage_data)
         
         # Display response with proper model identifier and formatting
         model_config = self.model_client_manager.get_model_config(model_name)
@@ -55,21 +67,39 @@ class MessageHandler:
         if not team:
             raise RuntimeError("Team not provided")
         
+        debug_logger = get_debug_logger()
+        
         try:
+            # Debug: Log multi-agent conversation start
+            if debug_logger.enabled:
+                debug_logger.log_api_call_start("MULTI-AGENT TEAM", [message])
+            
             # Send message to team with loading indicator
             with Halo(text="Processing", spinner="dots"):
                 task_result = await team.run(task=message)
+            
+            # Track token usage from all agents in this conversation
+            usage_data = extract_usage_from_task_result(task_result)
+            if usage_data:
+                self.config.add_usage_data(usage_data)
+            
+            # Debug: Log multi-agent conversation end with usage data
+            if debug_logger.enabled:
+                all_responses = []
+                for msg in task_result.messages:
+                    if hasattr(msg, 'source') and msg.source != "user":
+                        content = getattr(msg, 'content', str(msg))
+                        agent_name = getattr(msg, 'source', 'agent')
+                        all_responses.append(f"[{agent_name}]: {content}")
+                
+                combined_response = "\n".join(all_responses)
+                debug_logger.log_api_call_end(combined_response, usage_data)
             
             # Process and display agent responses (filter out user message echoes)
             for msg in task_result.messages:
                 # Only display actual agent responses, not user message echoes
                 if hasattr(msg, 'source') and msg.source != "user":
                     self._format_and_display_agent_response(msg)
-            
-            # Track token usage from all agents in this conversation
-            usage_data = extract_usage_from_task_result(task_result)
-            if usage_data:
-                self.config.add_usage_data(usage_data)
                 
             return task_result
                 
