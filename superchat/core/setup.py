@@ -78,8 +78,10 @@ class ChatSetup:
             
             agent_name = f"agent_{safe_name}_{i}"
             
-            # Create buffered context to limit conversation history to last 5 messages
-            buffered_context = BufferedChatCompletionContext(buffer_size=5)
+            # Scale context history: 3x participants (user + agents)
+            participants = 1 + len(models)  # user + agents
+            buffer_size = 3 * participants
+            buffered_context = BufferedChatCompletionContext(buffer_size=buffer_size)
             
             agent = AssistantAgent(
                 name=agent_name,
