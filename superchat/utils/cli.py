@@ -14,8 +14,9 @@ def create_parser():
     
     parser.add_argument(
         '--model', '-m',
+        nargs='*',
         action='append',
-        help='Add models to the chat (comma-separated or multiple -m flags: -m "lite,k2" or -m lite -m k2)'
+        help='Add models to the chat (space-separated, comma-separated, or multiple -m flags: -m k2 lite, -m "lite,k2", or -m lite -m k2)'
     )
 
     parser.add_argument(
@@ -34,31 +35,40 @@ def create_parser():
 
 
 def parse_model_arguments(model_args):
-    """Parse model arguments supporting both multiple -m flags and comma-separated values.
+    """Parse model arguments supporting space-separated, comma-separated, and multiple -m flags.
     
     Args:
-        model_args: List of model argument strings from argparse (can contain commas)
+        model_args: List from argparse with nargs='*' + action='append' 
+                   (nested lists from multiple -m flags)
         
     Returns:
         List of individual model names with whitespace stripped
         
     Examples:
-        ["lite,k2"] -> ["lite", "k2"]
-        ["lite", "k2"] -> ["lite", "k2"] 
-        ["lite, k2, deepseek"] -> ["lite", "k2", "deepseek"]
-        ["lite,k2", "deepseek"] -> ["lite", "k2", "deepseek"]
+        [["lite", "k2"]] -> ["lite", "k2"]                    # -m lite k2
+        [["lite,k2"]] -> ["lite", "k2"]                      # -m "lite,k2"  
+        [["lite"], ["k2"]] -> ["lite", "k2"]                 # -m lite -m k2
+        [["lite", "k2"], ["deepseek"]] -> ["lite", "k2", "deepseek"]  # -m lite k2 -m deepseek
     """
     if not model_args:
         return []
     
-    # Flatten comma-separated values and strip whitespace
+    # Flatten nested lists from nargs='*' + action='append'
     flattened_models = []
-    for arg in model_args:
-        # Split by comma and strip whitespace from each part
-        models = [model.strip() for model in arg.split(',')]
-        # Filter out empty strings
-        models = [model for model in models if model]
-        flattened_models.extend(models)
+    for arg_group in model_args:
+        if isinstance(arg_group, list):
+            # Handle space-separated values from single -m flag
+            for arg in arg_group:
+                # Also handle comma-separated values within each argument
+                models = [model.strip() for model in arg.split(',')]
+                # Filter out empty strings
+                models = [model for model in models if model]
+                flattened_models.extend(models)
+        else:
+            # Handle single string (shouldn't happen with nargs='*' but be safe)
+            models = [model.strip() for model in str(arg_group).split(',')]
+            models = [model for model in models if model]
+            flattened_models.extend(models)
     
     return flattened_models
 
