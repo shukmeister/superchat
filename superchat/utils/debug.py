@@ -1,11 +1,40 @@
-"""Debug utilities for superchat - clean, readable API call logging."""
+"""Comprehensive debug utilities for superchat - API call logging and AutoGen context analysis."""
 
 import os
 import logging
 
 
+# Global debug logger instance
+_debug_logger = None
+
+def get_debug_logger():
+    """Get the global debug logger instance."""
+    global _debug_logger
+    if _debug_logger is None:
+        _debug_logger = DebugLogger.from_env()
+    return _debug_logger
+
+def set_debug_enabled(enabled):
+    """Enable or disable debug logging globally."""
+    global _debug_logger
+    if _debug_logger is None:
+        _debug_logger = DebugLogger(enabled=enabled)
+    else:
+        _debug_logger.enabled = enabled
+        # Set up AutoGen logging if enabling debug
+        if enabled and not hasattr(_debug_logger, '_autogen_setup'):
+            _debug_logger._setup_autogen_logging()
+            _debug_logger._autogen_setup = True
+
+def initialize_debug_logger(cli_debug_flag=False):
+    """Initialize the global debug logger with CLI and environment settings."""
+    global _debug_logger
+    _debug_logger = DebugLogger.from_env_and_args(cli_debug_flag)
+    return _debug_logger
+
+
 class DebugLogger:
-    """Simple debug logger for API calls and token usage."""
+    """Comprehensive debug logger for API calls and AutoGen context analysis."""
     
     def __init__(self, enabled=False):
         self.enabled = enabled
@@ -103,39 +132,6 @@ class DebugLogger:
         if not self.enabled:
             return
         print(f"ESTIMATED TOKENS: ~{estimated_tokens}")
-
-
-# Global debug logger instance
-_debug_logger = None
-
-def get_debug_logger():
-    """Get the global debug logger instance."""
-    global _debug_logger
-    if _debug_logger is None:
-        _debug_logger = DebugLogger.from_env()
-    return _debug_logger
-
-def set_debug_enabled(enabled):
-    """Enable or disable debug logging globally."""
-    global _debug_logger
-    if _debug_logger is None:
-        _debug_logger = EnhancedDebugLogger(enabled=enabled)
-    else:
-        _debug_logger.enabled = enabled
-        # Set up AutoGen logging if enabling debug
-        if enabled and not hasattr(_debug_logger, '_autogen_setup'):
-            _debug_logger._setup_autogen_logging()
-            _debug_logger._autogen_setup = True
-
-def initialize_debug_logger(cli_debug_flag=False):
-    """Initialize the global debug logger with CLI and environment settings."""
-    global _debug_logger
-    _debug_logger = EnhancedDebugLogger.from_env_and_args(cli_debug_flag)
-    return _debug_logger
-
-
-class EnhancedDebugLogger(DebugLogger):
-    """Enhanced debug logger with comprehensive AutoGen context analysis."""
     
     def _log_separator(self, title):
         """Print a debug section separator."""
