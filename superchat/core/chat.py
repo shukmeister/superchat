@@ -77,6 +77,11 @@ class ChatSession:
             try:
                 # Get and parse user input
                 user_input = input(">> ")
+                
+                # Display the submitted message in grey (overwrite the previous line)
+                if user_input.strip():  # Only colorize non-empty input
+                    print(f"\033[A\033[2K\033[90m>> {user_input}\033[0m")
+                
                 parsed = parse_input(user_input)
                 
                 # Handle empty input (do nothing for now)
