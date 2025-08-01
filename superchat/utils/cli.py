@@ -9,26 +9,28 @@ def create_parser():
     """Create and configure the argument parser for superchat CLI."""
     parser = argparse.ArgumentParser(
         prog='superchat',
-        description='AI-driven discussions and multi-agent debates'
+        description='AI-driven discussions and multi-agent debates',
+        usage='superchat [-h] [-m|--model MODEL] [-d|--debug] [-v|--voice]'
     )
     
     parser.add_argument(
         '--model', '-m',
         nargs='*',
         action='append',
-        help='Add models to the chat (space-separated, comma-separated, or multiple -m flags: -m k2 lite, -m "lite,k2", or -m lite -m k2)'
+        metavar='MODEL',
+        help='Add models to the chat. Examples: -m k2 lite (space-separated), -m "lite,k2" (comma-separated), -m lite -m k2 (multiple flags), --model k2 lite (long form)'
     )
 
     parser.add_argument(
         '--debug', '-d',
         action='store_true',
-        help='Enable debug mode for detailed message and token tracking'
+        help='Enable debug mode with detailed message and token tracking (-d or --debug)'
     )
 
     parser.add_argument(
         '--voice', '-v',
         action='store_true',
-        help='Enable voice output mode'
+        help='Enable voice output mode (-v or --voice)'
     )
     
     return parser
