@@ -47,15 +47,11 @@ class MessageHandler:
         response_content = self._get_response_from_task_result(task_result)
         
         # Display response with proper model identifier and formatting
-        model_config = self.model_client_manager.get_model_config(model_name)
-        if model_config:
-            model = model_config.get("model", model_name)
-            # Get unique identifier for this model
-            model_index = self.config.models.index(model_name) if model_name in self.config.models else 0
-            identifier = get_model_identifier(model_index)
-            print(f"{identifier} [{model}]:\n{response_content}\n")
-        else:
-            print(f"[{model_name}]:\n{response_content}\n")
+        # Get unique identifier for this model
+        model_index = self.config.models.index(model_name) if model_name in self.config.models else 0
+        identifier = get_model_identifier(model_index)
+        agent_header = self._format_agent_display(identifier, model_name)
+        print(f"{agent_header}\n> {response_content}\n")
         
         # Debug: Log response with comprehensive breakdown after displaying response
         if debug_logger.enabled:
@@ -123,14 +119,11 @@ class MessageHandler:
             agent_info = self.agent_model_mapping[agent_name]
             identifier = agent_info['identifier']
             model_name = agent_info['model_name']
-            model_config = self.model_client_manager.get_model_config(model_name)
-            if model_config:
-                model = model_config.get("model", model_name)
-                print(f"{identifier} [{model}]:\n{content}")
-            else:
-                print(f"{identifier} [{model_name}]:\n{content}")
+            agent_header = self._format_agent_display(identifier, model_name)
+            print(f"{agent_header}\n> {content}")
         else:
-            print(f"[{agent_name}]:\n{content}")
+            # Fallback for unknown agents
+            print(f"\033[4m[{agent_name}]\033[0m:\n> {content}")
         print()
     
     # Legacy method - conversation coordination now handled by ChatSession
@@ -156,3 +149,13 @@ class MessageHandler:
             elif hasattr(last_message, 'text'):
                 return last_message.text
         return "No response received"
+    
+    # Format agent header with underlined model name only
+    def _format_agent_display(self, identifier, model_name):
+        """Create formatted agent header with underlined model name."""
+        model_config = self.model_client_manager.get_model_config(model_name)
+        if model_config:
+            model = model_config.get("model", model_name)
+            return f"[{identifier}] \033[4m{model}\033[0m:"
+        else:
+            return f"[{identifier}] \033[4m{model_name}\033[0m:"

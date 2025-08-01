@@ -4,6 +4,7 @@
 - Enhanced CLI with flexible model input: -m k2 lite, -m "lite,k2", or -m lite -m k2
 - Added CLI shortcuts to bypass setup mode entirely
 - Context history now scales with participants (3x users + agents) instead of fixed 5 messages
+- Improved formatting of chat messages
 
 ## [0.7] - 2025-07-31
 - Added debug mode to show more data about AI messages (-d in CLI and /debug in setup)
