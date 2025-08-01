@@ -20,13 +20,27 @@ AI-driven discussions and multi-agent debates. A terminal-based CLI application 
 
 ## Installation
 
-This is only tested on zsh on macOS. To install:
+**Install superchat with one command**
 
 ```bash
-pip install --user git+https://github.com/shukmeister/superchat.git
+pip3 install --user git+https://github.com/shukmeister/superchat.git
 ```
 
-Make sure `~/.local/bin` is in your PATH for the `superchat` and `sc` commands to work.
+**Test that it worked**
+
+```bash
+superchat --help
+```
+
+If you see a dialog with instructions, then you're ready to use superchat
+
+### If `superchat command isn't found`
+
+Run this command to add the install location to your PATH:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
+```
 
 ## Usage
 
@@ -42,20 +56,22 @@ Or use the short alias:
 sc
 ```
 
-## Requirements
+## Getting Your API Key
 
-- Python 3.8+
-- OpenRouter API key (get one at https://openrouter.ai/keys)
+Before using superchat, you need an OpenRouter API key:
+
+1. Go to https://openrouter.ai/keys
+2. Sign up for a free account
+3. Create a new API key
+4. Copy the key (starts with `sk-or-`)
 
 ## Configuration
 
-Create a `.env` file or set environment variables with your OpenRouter API key:
+Replace `ADD-YOUR-KEY-HERE` with your real API key and run:
 
+```bash
+echo "OPENROUTER_API_KEY=ADD-YOUR-KEY-HERE" > ~/.env
 ```
-OPENROUTER_API_KEY=your_key_here
-```
-
-Or place your API key in `~/.superchat/config`.
 
 ## Updating
 
@@ -71,9 +87,6 @@ Planned features:
 
 ```
 - Web search
-- Multi agent debate
-- CLI flag shortcuts
-- Prompt caching
 - Image processing
 - Voice mode
 ```
