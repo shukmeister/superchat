@@ -34,26 +34,12 @@ superchat --help
 
 If you see a dialog with instructions, then you're ready to use superchat
 
-### If `superchat command isn't found`
+**If `superchat command isn't found`**
 
 Run this command to add the install location to your PATH:
 
 ```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
-```
-
-## Usage
-
-After installation, run from any terminal:
-
-```bash
-superchat
-```
-
-Or use the short alias:
-
-```bash
-sc
 ```
 
 ## Getting Your API Key
@@ -71,6 +57,20 @@ Replace `ADD-YOUR-KEY-HERE` with your real API key and run:
 
 ```bash
 echo "OPENROUTER_API_KEY=ADD-YOUR-KEY-HERE" > ~/.env
+```
+
+## Usage
+
+After installation, run from any terminal:
+
+```bash
+superchat
+```
+
+Or use the short alias:
+
+```bash
+sc
 ```
 
 ## Updating
