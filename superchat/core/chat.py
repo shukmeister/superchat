@@ -105,7 +105,6 @@ class ChatSession:
                 
                 # Handle regular user messages to AI agents        
                 if parsed['type'] == 'message':
-                    print()  # Add single line break after user message
                     try:
                         if self.is_multi_agent:
                             await self._handle_multi_agent_conversation(parsed['message'])

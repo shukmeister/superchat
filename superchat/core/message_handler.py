@@ -53,9 +53,9 @@ class MessageHandler:
             # Get unique identifier for this model
             model_index = self.config.models.index(model_name) if model_name in self.config.models else 0
             identifier = get_model_identifier(model_index)
-            print(f"{identifier} [{model}]: {response_content}\n")
+            print(f"{identifier} [{model}]:\n{response_content}\n")
         else:
-            print(f"[{model_name}]: {response_content}\n")
+            print(f"[{model_name}]:\n{response_content}\n")
         
         # Debug: Log response with comprehensive breakdown after displaying response
         if debug_logger.enabled:
@@ -126,11 +126,11 @@ class MessageHandler:
             model_config = self.model_client_manager.get_model_config(model_name)
             if model_config:
                 model = model_config.get("model", model_name)
-                print(f"{identifier} [{model}]: {content}")
+                print(f"{identifier} [{model}]:\n{content}")
             else:
-                print(f"{identifier} [{model_name}]: {content}")
+                print(f"{identifier} [{model_name}]:\n{content}")
         else:
-            print(f"[{agent_name}]: {content}")
+            print(f"[{agent_name}]:\n{content}")
         print()
     
     # Legacy method - conversation coordination now handled by ChatSession
