@@ -114,6 +114,11 @@ def setup_loop(debug_enabled=False):
                 print("  /stats - Show session statistics")
                 print("  /exit - Exit superchat")
                 print()
+                print("CLI shortcuts (skip setup entirely):")
+                print("  superchat -m k2 lite              # Space-separated models")
+                print("  superchat -m \"lite,k2\"            # Comma-separated models")
+                print("  superchat -m lite -m k2           # Multiple -m flags")
+                print()
                 
             elif command == "list":
                 print()
