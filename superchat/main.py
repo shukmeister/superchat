@@ -16,12 +16,13 @@ figures out what you want to do, and routes you to the right place.
 
 import argparse
 import sys
-from superchat.ui.display import setup_loop
+from superchat.ui.display import setup_loop, display_banner
 from superchat.core.chat import ChatSession
 from superchat.core.setup import ChatSetup
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.model_resolver import resolve_model_from_input
+from importlib.metadata import version
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -147,6 +148,10 @@ def main():
         
         if should_use_cli_mode(args, resolved_models, success):
             # Direct CLI mode - create config and start chat
+            
+            # Display banner and version (same as setup mode)
+            display_banner()
+            print(f"Version v{version('superchat')}\n")
             
             # Initialize debug logger for CLI mode
             if args.debug:
