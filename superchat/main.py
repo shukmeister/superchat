@@ -159,7 +159,6 @@ def main():
                 initialize_debug_logger(args.debug)
             
             config = create_cli_config(args, resolved_models)
-            print(f"Starting chat with models: {', '.join(resolved_models)}")
             if args.voice:
                 print("Voice mode enabled")
             if args.debug:
