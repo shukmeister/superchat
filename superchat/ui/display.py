@@ -35,12 +35,16 @@ def display_banner():
 
 
 
-def setup_loop():
+def setup_loop(debug_enabled=False):
     """Main setup loop for configuring chat parameters."""
     display_banner()
     
+    # Initialize debug logger with CLI flag
+    from superchat.utils.debug import initialize_debug_logger
+    initialize_debug_logger(debug_enabled)
+    
     # Initialize session config and model client manager
-    config = SessionConfig()
+    config = SessionConfig(debug_enabled=debug_enabled)
     model_manager = ModelClientManager()
     
     # Check for API key on startup
@@ -85,13 +89,6 @@ def setup_loop():
                     print("Please select at least one model first using /model")
                     print()
                     continue
-                if len(config.models) > 1:
-                    print()
-                    print("Error: /start requires exactly one model. Multiple models not supported yet.")
-                    print(f"Currently selected: {', '.join(config.models)}")
-                    print("Use /model to select a single model or wait for multi-agent support.")
-                    print()
-                    continue
                 print()  # Add line break after /start command
                 config.start_session()
                 return config
@@ -100,16 +97,27 @@ def setup_loop():
                 print()
                 print("Available commands:")
                 print("  /model <name> - Add a model to the chat")
+                print("  /model <name1, name2, name3> - Add multiple models at once")
                 print("  /remove <name> - Remove a model from the chat")
                 print("  /list - Show available models")
                 print("  /status - Show current configuration")
+                print("  /debug - Toggle debug mode for detailed message/token tracking")
                 print("  /start - Begin the chat session")
                 print("  /help - Show this help")
                 print("  /exit - Exit superchat")
                 print()
+                print("Examples:")
+                print("  /model v3, flash lite, k2")
+                print("  /model deepseek")
+                print()
                 print("Chat commands (available after /start):")
                 print("  /stats - Show session statistics")
                 print("  /exit - Exit superchat")
+                print()
+                print("CLI shortcuts (skip setup entirely):")
+                print("  superchat -m k2 lite              # Space-separated models")
+                print("  superchat -m \"lite,k2\"            # Comma-separated models")
+                print("  superchat -m lite -m k2           # Multiple -m flags")
                 print()
                 
             elif command == "list":
@@ -166,55 +174,111 @@ def setup_loop():
                             print(f"- Model {identifier}: {model_key}")
                 else:
                     print("  No models selected")
+                
+                # Show debug mode status
+                debug_status = "enabled" if config.debug_enabled else "disabled"
+                print(f"- Debug mode: {debug_status}")
                 print()
                 
             elif command == "model":
                 if len(args) < 1:
                     print()
-                    print("Usage: /model <name>")
+                    print("Usage: /model <name1, name2, name3> or /model <name>")
+                    print("Examples:")
+                    print("  /model v3, flash lite, k2")
+                    print("  /model deepseek")
                     available_models_list = get_available_models_list(model_manager)
                     print(f"Available models: {available_models_list}")
                     print()
                     continue
+                
                 user_input = " ".join(args)
                 
-                # Resolve model using helper function
-                result = resolve_model_from_input(user_input, model_manager.models_config)
-                
-                if result.action_type == "selected":
-                    model_key = result.model_key
-                elif result.action_type == "suggest":
+                # Check if input contains commas for multi-model selection
+                if ',' in user_input:
+                    # Split by commas and process each model
+                    model_inputs = [model_input.strip() for model_input in user_input.split(',')]
                     print()
-                    print(result.message)
+                    added_models = []
+                    already_selected = []
+                    not_found = []
+                    
+                    for model_input in model_inputs:
+                        if not model_input:  # Skip empty strings
+                            continue
+                            
+                        # Resolve each model using helper function
+                        result = resolve_model_from_input(model_input, model_manager.models_config)
+                        
+                        if result.action_type == "selected":
+                            model_key = result.model_key
+                            if config.add_model(model_key):
+                                model_config = model_manager.get_model_config(model_key)
+                                if model_config:
+                                    display_name = get_display_name(model_config)
+                                    added_models.append(display_name)
+                                else:
+                                    added_models.append(model_key)
+                            else:
+                                model_config = model_manager.get_model_config(model_key)
+                                if model_config:
+                                    display_name = get_display_name(model_config)
+                                    already_selected.append(display_name)
+                                else:
+                                    already_selected.append(model_key)
+                        else:
+                            not_found.append(f"'{model_input}' - {result.message}")
+                    
+                    # Display results summary
+                    if added_models:
+                        print(f"Added models: {', '.join(added_models)}")
+                    if already_selected:
+                        print(f"Already selected: {', '.join(already_selected)}")
+                    if not_found:
+                        print("Not found:")
+                        for error in not_found:
+                            print(f"  {error}")
+                        available_models_list = get_available_models_list(model_manager)
+                        print(f"\nAvailable models: {available_models_list}")
                     print()
-                    continue
-                else:  # not_found
-                    print()
-                    print(result.message)
-                    available_models_list = get_available_models_list(model_manager)
-                    print(f"Available models: {available_models_list}")
-                    print()
-                    continue
-                
-                if config.add_model(model_key):
-                    print()
-                    model_config = model_manager.get_model_config(model_key)
-                    if model_config:
-                        display_name = get_display_name(model_config)
-                        print(f"Added model: {display_name}")
-                        print()
-                    else:
-                        print(f"Added model: {model_key}")
-                        print()
                 else:
-                    print()
-                    model_config = model_manager.get_model_config(model_key)
-                    if model_config:
-                        display_name = get_display_name(model_config)
-                        print(f"Model {display_name} already selected")
+                    # Single model selection (existing logic)
+                    result = resolve_model_from_input(user_input, model_manager.models_config)
+                    
+                    if result.action_type == "selected":
+                        model_key = result.model_key
+                    elif result.action_type == "suggest":
+                        print()
+                        print(result.message)
+                        print()
+                        continue
+                    else:  # not_found
+                        print()
+                        print(result.message)
+                        available_models_list = get_available_models_list(model_manager)
+                        print(f"Available models: {available_models_list}")
+                        print()
+                        continue
+                    
+                    if config.add_model(model_key):
+                        print()
+                        model_config = model_manager.get_model_config(model_key)
+                        if model_config:
+                            display_name = get_display_name(model_config)
+                            print(f"Added model: {display_name}")
+                            print()
+                        else:
+                            print(f"Added model: {model_key}")
+                            print()
                     else:
-                        print(f"Model {model_key} already selected")
-                    print()
+                        print()
+                        model_config = model_manager.get_model_config(model_key)
+                        if model_config:
+                            display_name = get_display_name(model_config)
+                            print(f"Model {display_name} already selected")
+                        else:
+                            print(f"Model {model_key} already selected")
+                        print()
             
             elif command == "remove":
                 if len(args) < 1:
@@ -278,6 +342,18 @@ def setup_loop():
                         print(f"Model {model_key} was not in configuration")
                     print()
             
+            elif command == "debug":
+                # Toggle debug mode
+                current_debug = config.debug_enabled
+                config.set_debug_enabled(not current_debug)
+                print()
+                if config.debug_enabled:
+                    print("Debug mode: enabled")
+                    print("You will see detailed message and token information during chat.")
+                else:
+                    print("Debug mode: disabled")
+                print()
+                    
             elif command == "stats":
                 print()
                 print("The /stats command is only available during chat sessions.")

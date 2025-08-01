@@ -14,48 +14,70 @@ Think of it as the app's "receptionist" - it greets you when you run superchat,
 figures out what you want to do, and routes you to the right place.
 """
 
-import argparse
 import sys
-from superchat.ui.display import setup_loop
+from superchat.ui.display import setup_loop, display_banner
 from superchat.core.chat import ChatSession
+from superchat.core.setup import ChatSetup
+from superchat.core.session import SessionConfig
+from superchat.core.model_client import ModelClientManager
+from superchat.utils.cli import create_parser, resolve_cli_models, should_use_cli_mode, create_cli_config
+from importlib.metadata import version
 
-def create_parser():
-    parser = argparse.ArgumentParser(
-        prog='superchat',
-        description='AI-driven discussions and multi-agent debates'
-    )
-    
-    parser.add_argument(
-        '--model', '-m',
-        action='append',
-        help='Add a model to the chat (can be used multiple times)'
-    )
-
-    # commented out voice until we need it later    
-    # parser.add_argument(
-    #     '--voice', '-v',
-    #     action='store_true',
-    #     help='Enable voice output mode'
-    # )
-    
-    return parser
 
 def main():
     parser = create_parser()
     args = parser.parse_args()
     
-    # If CLI args provided, skip setup loop (future milestone)
-    if args.model:
-        print("CLI mode not yet implemented - using setup mode")
+    config = None
     
-    # Enter setup loop
-    config = setup_loop()
+    # Try CLI mode if model arguments provided
+    if args.model:
+        # Initialize model manager for fuzzy resolution
+        model_manager = ModelClientManager()
+        
+        # Resolve CLI model arguments using existing fuzzy logic  
+        success, resolved_models, errors = resolve_cli_models(args.model, model_manager)
+        
+        if should_use_cli_mode(args, resolved_models, success):
+            # Direct CLI mode - create config and start chat
+            
+            # Display banner and version (same as setup mode)
+            display_banner()
+            print(f"Version v{version('superchat')}\n")
+            
+            # Initialize debug logger for CLI mode
+            if args.debug:
+                from superchat.utils.debug import initialize_debug_logger
+                initialize_debug_logger(args.debug)
+            
+            config = create_cli_config(args, resolved_models)
+            if args.voice:
+                print("Voice mode enabled")
+            if args.debug:
+                print("Debug mode enabled")
+        else:
+            # CLI mode failed - show errors and fall back to setup mode
+            print("Unable to resolve all models from CLI arguments:")
+            for error in errors:
+                print(f"  {error}")
+            print("\nEntering interactive setup mode...\n")
+            config = setup_loop(debug_enabled=args.debug)
+    else:
+        # No CLI args - use normal setup loop
+        config = setup_loop(debug_enabled=args.debug)
     
     if config is None:
         return 0
     
-    # Initialize and start chat session
+    # Initialize chat session with pre-configured components
     chat_session = ChatSession(config)
+    
+    # Use ChatSetup to configure all components
+    setup = ChatSetup(config)
+    message_handler = setup.setup_complete_session()
+    chat_session.set_message_handler(message_handler)
+    
+    # Start the chat loop
     chat_session.start_chat_loop()
     
     return 0

@@ -9,5 +9,5 @@ def get_model_identifier(model_index):
     Returns:
         str: Russian letter or numeric identifier (e.g., 'д', 'ф', 'ш', '#4')
     """
-    russian_letters = ['д', 'ф', 'ш']
+    russian_letters = ['д', 'ф', 'ш', 'в', 'г', 'л']
     return russian_letters[model_index] if model_index < len(russian_letters) else f"#{model_index+1}"
