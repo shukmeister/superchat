@@ -81,6 +81,7 @@ class ChatSession:
                 # Display the submitted message in grey (overwrite the previous line)
                 if user_input.strip():  # Only colorize non-empty input
                     print(f"\033[A\033[2K\033[90m>> {user_input}\033[0m")
+                    print()
                 
                 parsed = parse_input(user_input)
                 
@@ -91,19 +92,16 @@ class ChatSession:
                 # Handle chat commands (/exit, /stats, etc.)    
                 if parsed['type'] == 'command':
                     if parsed['command'] == 'exit':
-                        print()
                         stats = self.config.get_stats()
                         display_exit_summary(stats, self.config.models, self.model_client_manager)
                         print("Terminating connection")
                         break
                     elif parsed['command'] == 'stats':
-                        print()
                         stats = self.config.get_stats()
                         display_stats(stats, self.config.models, self.model_client_manager)
                         print()
                         continue
                     else:
-                        print()
                         print(f"Unknown command: /{parsed['command']}")
                         print()
                         continue
@@ -133,7 +131,6 @@ class ChatSession:
         if not self.message_handler or not self.message_handler.team:
             raise RuntimeError("Multi-agent team not initialized")
         
-        print()  # Add spacing before group responses
         
         try:
             # Send message to current team (team maintains its own history)
