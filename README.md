@@ -11,19 +11,17 @@ AI-driven discussions and multi-agent debates. A terminal-based CLI application 
 
 - **Python 3.8+** - Check with `python3 --version`
 - **pip** - Usually comes with Python, check with `pip --version`
-- **git** - Required for installation, check with `git --version`
 - **OpenRouter API key** - Get one at https://openrouter.ai/keys
 
 ### Installing missing dependencies on macOS:
 - **Python**: `brew install python` or download from python.org
-- **git**: `brew install git` or install Xcode Command Line Tools
 
 ## Installation
 
 **Install superchat with one command**
 
 ```bash
-pip3 install --user git+https://github.com/shukmeister/superchat.git
+pip install superchat
 ```
 
 **Test that it worked**
@@ -34,7 +32,7 @@ superchat --help
 
 If you see a dialog with instructions, then you're ready to use superchat
 
-**If `superchat command isn't found`**
+**If `superchat command isn't found`**:
 
 Run this command to add the install location to your PATH:
 
@@ -78,7 +76,7 @@ sc
 To update to the latest version:
 
 ```bash
-pip install --upgrade --user git+https://github.com/shukmeister/superchat.git
+pip install --upgrade superchat
 ```
 
 ## Roadmap
