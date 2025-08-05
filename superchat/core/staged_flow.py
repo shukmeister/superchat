@@ -131,7 +131,7 @@ class StagedFlowManager:
         
         return True
     
-    def promote_current_agent(self):
+    async def promote_current_agent(self):
         """Promote current agent and advance to next agent.
         
         Returns:
@@ -177,10 +177,26 @@ class StagedFlowManager:
                 'message': f'Promoted {current_agent_info["display_name"]}. Next: {next_agent_info["display_name"]}',
                 'phase': self.phase,
                 'next_agent': next_agent_info,
-                'all_promoted': False
+                'all_promoted': False,
+                'should_auto_send': True  # Flag to indicate that original prompt should be sent after status display
             }
             
         return promoted_info
+    
+    async def auto_send_original_prompt(self):
+        """Send original prompt to current agent if available.
+        
+        Returns:
+            bool: True if prompt was sent, False otherwise
+        """
+        if self.original_prompt and self.has_more_agents():
+            # Display the original prompt in grey to show what the AI is responding to
+            print(f"\033[90m>> {self.original_prompt}\033[0m")
+            print()
+            
+            await self.handle_individual_message(self.original_prompt)
+            return True
+        return False
     
     def get_status_display(self):
         """Get current status for display to user."""
@@ -198,7 +214,7 @@ class StagedFlowManager:
         else:
             return f"Staged flow - {self.phase} phase"
     
-    def boot_current_agent(self):
+    async def boot_current_agent(self):
         """Boot current agent (exclude from team debate) and advance to next agent.
         
         Returns:
@@ -248,13 +264,16 @@ class StagedFlowManager:
         else:
             # More agents remaining
             next_agent_info = self.get_current_agent_info()
-            return {
+            boot_info = {
                 'success': True,
                 'message': f'Booted {current_agent_info["display_name"]}. Next: {next_agent_info["display_name"]}',
                 'phase': self.phase,
                 'next_agent': next_agent_info,
-                'all_processed': False
+                'all_processed': False,
+                'should_auto_send': True  # Flag to indicate that original prompt should be sent after status display
             }
+                
+            return boot_info
     
     def restart_current_agent(self):
         """Restart current agent conversation (clear transcript and start fresh).

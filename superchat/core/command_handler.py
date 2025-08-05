@@ -76,7 +76,7 @@ class ChatCommandHandler:
             return True, False  # continue, don't exit
         
         # Execute promotion
-        result = self.staged_flow_manager.promote_current_agent()
+        result = await self.staged_flow_manager.promote_current_agent()
         print(result['message'])
         
         if result.get('all_promoted', False):
@@ -97,6 +97,10 @@ class ChatCommandHandler:
             print(f"Status: {self.staged_flow_manager.get_status_display()}")
             print()
             
+            # Auto-send original prompt to next agent if flagged
+            if result.get('should_auto_send', False):
+                await self.staged_flow_manager.auto_send_original_prompt()
+            
         return True, False  # continue, don't exit
     
     async def _handle_boot(self):
@@ -109,7 +113,7 @@ class ChatCommandHandler:
             return True, False  # continue, don't exit
         
         # Execute boot
-        result = self.staged_flow_manager.boot_current_agent()
+        result = await self.staged_flow_manager.boot_current_agent()
         print(result['message'])
         
         if result.get('all_processed', False) and result.get('next_phase') == 'team':
@@ -133,6 +137,10 @@ class ChatCommandHandler:
             # Show status for next agent
             print(f"Status: {self.staged_flow_manager.get_status_display()}")
             print()
+            
+            # Auto-send original prompt to next agent if flagged
+            if result.get('should_auto_send', False):
+                await self.staged_flow_manager.auto_send_original_prompt()
             
         return True, False  # continue, don't exit
     
