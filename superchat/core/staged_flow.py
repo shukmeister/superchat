@@ -41,6 +41,7 @@ class StagedFlowManager:
         self.current_agent_index = 0
         self.phase = "individual"  # "individual" or "team"
         self.original_prompt = None
+        self.awaiting_initial_question = True  # Flag to show special prompt for first question
         
         # Transcript storage for context assembly
         self.agent_transcripts = {}  # Dict mapping agent_index to {agent_name, model_name, messages[], promoted}
@@ -107,6 +108,10 @@ class StagedFlowManager:
         # Store original prompt if this is the first message
         if self.original_prompt is None:
             self.original_prompt = message
+            self.awaiting_initial_question = False  # No longer awaiting initial question
+            # Show status for first agent immediately after capturing initial question
+            print(f"Status: {self.get_status_display()}")
+            print()
             
         # Initialize transcript storage for current agent if not exists
         if self.current_agent_index not in self.agent_transcripts:
@@ -201,7 +206,9 @@ class StagedFlowManager:
     def get_status_display(self):
         """Get current status for display to user."""
         if self.is_individual_phase():
-            if self.has_more_agents():
+            if self.awaiting_initial_question:
+                return "Input initial discussion question:"
+            elif self.has_more_agents():
                 agent_info = self.get_current_agent_info()
                 if agent_info:
                     return f"1:1 with {agent_info['display_name']} [{agent_info['identifier']}]"

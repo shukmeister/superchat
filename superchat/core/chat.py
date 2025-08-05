@@ -99,7 +99,11 @@ class ChatSession:
                         identifier = get_model_identifier(i)
                         print(f"  {identifier} [{model_name}]")
                 if self.staged_flow_manager:
-                    print(f"\nStatus: {self.staged_flow_manager.get_status_display()}")
+                    status_display = self.staged_flow_manager.get_status_display()
+                    if self.staged_flow_manager.awaiting_initial_question:
+                        print(f"\n{status_display}")
+                    else:
+                        print(f"\nStatus: {status_display}")
             else:
                 print("Starting multi-agent debate with:")
                 for i, model_name in enumerate(self.config.models):
