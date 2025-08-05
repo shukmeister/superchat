@@ -21,9 +21,10 @@ from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.parser import parse_input
 from superchat.utils.identifiers import get_model_identifier
-from superchat.utils.stats import display_stats, display_exit_summary
 from superchat.core.setup import ChatSetup
 from superchat.core.staged_flow import StagedFlowManager
+from superchat.core.command_handler import ChatCommandHandler
+from superchat.core.message_router import MessageRouter
 
 
 # Chat session coordinator that manages runtime conversation flow
@@ -38,6 +39,10 @@ class ChatSession:
         self.message_handler = None
         # Staged flow manager for staged conversations
         self.staged_flow_manager = None
+        # Command handler for processing chat commands
+        self.command_handler = None
+        # Message router for routing messages to appropriate handlers
+        self.message_router = None
     
     # Setup - Inject pre-configured message handler from setup
     def set_message_handler(self, message_handler):
@@ -53,6 +58,25 @@ class ChatSession:
                 self.message_handler, 
                 agent_model_mapping
             )
+    
+    # Setup - Initialize command handler for processing chat commands
+    def setup_command_handler(self):
+        """Initialize command handler with required dependencies."""
+        self.command_handler = ChatCommandHandler(
+            self.config,
+            self.staged_flow_manager,
+            self.model_client_manager
+        )
+        
+        # Initialize message router with required dependencies
+        self.message_router = MessageRouter(
+            self.config,
+            self.message_handler,
+            self.staged_flow_manager,
+            self.is_multi_agent
+        )
+        # Set reference to this ChatSession for calling conversation methods
+        self.message_router.set_chat_session(self)
     
     # Setup - Welcome screen - start the interactive chat loop with model display and >> prompt
     def start_chat_loop(self):
@@ -119,67 +143,17 @@ class ChatSession:
                 
                 # Handle chat commands (/exit, /stats, etc.)    
                 if parsed['type'] == 'command':
-                    if parsed['command'] == 'exit':
-                        stats = self.config.get_stats()
-                        display_exit_summary(stats, self.config.models, self.model_client_manager)
-                        print("Terminating connection")
+                    should_continue, should_exit = await self.command_handler.handle_command(
+                        parsed['command'], parsed.get('args', [])
+                    )
+                    if should_exit:
                         break
-                    elif parsed['command'] == 'stats':
-                        stats = self.config.get_stats()
-                        display_stats(stats, self.config.models, self.model_client_manager)
-                        print()
-                        continue
-                    elif parsed['command'] == 'promote':
-                        if self.staged_flow_manager and self.staged_flow_manager.is_individual_phase():
-                            result = self.staged_flow_manager.promote_current_agent()
-                            print(result['message'])
-                            if result.get('all_promoted', False):
-                                # All agents promoted - transition to team phase
-                                transition_result = await self.staged_flow_manager.transition_to_team_phase()
-                                print(transition_result['message'])
-                                if transition_result.get('note'):
-                                    print(transition_result['note'])
-                            else:
-                                # Show status for next agent
-                                print(f"Status: {self.staged_flow_manager.get_status_display()}")
-                                print()
-                            continue
-                        else:
-                            print()
-                            print("/promote command is only available in staged flow individual phase")
-                            print()
-                            continue
-                    else:
-                        print(f"Unknown command: /{parsed['command']}")
-                        print()
+                    if should_continue:
                         continue
                 
                 # Handle regular user messages to AI agents        
                 if parsed['type'] == 'message':
-                    try:
-                        if self.is_multi_agent:
-                            # Check if using staged flow
-                            if self.staged_flow_manager and self.staged_flow_manager.is_individual_phase():
-                                # Staged flow: individual conversation
-                                handled = await self.staged_flow_manager.handle_individual_message(parsed['message'])
-                                if not handled:
-                                    print()
-                                    print("No more agents for individual conversations. Use /promote to advance.")
-                                    print()
-                            elif self.staged_flow_manager and self.staged_flow_manager.is_team_phase():
-                                # Staged flow: team phase (Phase 1 - not implemented yet)
-                                print()
-                                print("Team debate phase not yet implemented in Phase 1.")
-                                print("This will be available in Phase 2 of the staged chat system.")
-                                print()
-                            else:
-                                # Default flow: immediate team conversation
-                                await self._handle_multi_agent_conversation(parsed['message'])
-                        else:
-                            # Single agent conversation
-                            await self.message_handler.handle_single_agent_response(parsed['message'])
-                    except Exception as e:
-                        print(f"Error: {e}\n")
+                    await self.message_router.route_message(parsed['message'])
                     
             except KeyboardInterrupt:
                 print("\nTerminating connection")

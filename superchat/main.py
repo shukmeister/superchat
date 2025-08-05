@@ -86,6 +86,9 @@ def main():
     # Set up staged flow manager if needed
     chat_session.setup_staged_flow_manager(setup_result['agents'], setup_result['agent_mapping'])
     
+    # Set up command handler
+    chat_session.setup_command_handler()
+    
     # Start the chat loop
     chat_session.start_chat_loop()
     
