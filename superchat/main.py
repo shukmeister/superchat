@@ -55,6 +55,9 @@ def main():
                 print("Voice mode enabled")
             if args.debug:
                 print("Debug mode enabled")
+            if args.flow:
+                flow_description = "immediate team chat" if args.flow == "default" else "1:1 then team debate"
+                print(f"Chat flow: {args.flow} ({flow_description})")
         else:
             # CLI mode failed - show errors and fall back to setup mode
             print("Unable to resolve all models from CLI arguments:")
@@ -63,8 +66,11 @@ def main():
             print("\nEntering interactive setup mode...\n")
             config = setup_loop(debug_enabled=args.debug)
     else:
-        # No CLI args - use normal setup loop
+        # No CLI args - use normal setup loop, but pass flow if specified
         config = setup_loop(debug_enabled=args.debug)
+        # If flow was specified via CLI but no models, apply it to the setup config
+        if config and args.flow:
+            config.set_chat_flow(args.flow)
     
     if config is None:
         return 0
