@@ -70,7 +70,6 @@ class ChatCommandHandler:
         """Handle /promote command."""
         # Check if promote is available
         if not (self.staged_flow_manager and self.staged_flow_manager.is_individual_phase()):
-            print()
             print("/promote command is only available in staged flow individual phase")
             print()
             return True, False  # continue, don't exit
@@ -107,7 +106,6 @@ class ChatCommandHandler:
         """Handle /boot command."""
         # Check if boot is available
         if not (self.staged_flow_manager and self.staged_flow_manager.is_individual_phase()):
-            print()
             print("/boot command is only available in staged flow individual phase")
             print()
             return True, False  # continue, don't exit
@@ -148,7 +146,6 @@ class ChatCommandHandler:
         """Handle /restart command."""
         # Check if restart is available
         if not (self.staged_flow_manager and self.staged_flow_manager.is_individual_phase()):
-            print()
             print("/restart command is only available in staged flow individual phase")
             print()
             return True, False  # continue, don't exit

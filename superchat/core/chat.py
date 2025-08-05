@@ -17,6 +17,7 @@ from setup.py and orchestrates the runtime conversation experience.
 """
 
 import asyncio
+from prompt_toolkit.shortcuts import PromptSession
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.parser import parse_input
@@ -133,7 +134,8 @@ class ChatSession:
         while True:
             try:
                 # Get and parse user input
-                user_input = input(">> ")
+                session = PromptSession()
+                user_input = await session.prompt_async(">> ")
                 
                 # Display the submitted message in grey (overwrite the previous line)
                 if user_input.strip():  # Only colorize non-empty input
