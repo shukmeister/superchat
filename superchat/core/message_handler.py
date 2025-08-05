@@ -129,11 +129,10 @@ class MessageHandler:
             identifier = agent_info['identifier']
             model_name = agent_info['model_name']
             agent_header = self._format_agent_display(identifier, model_name)
-            print(f"{agent_header}\n> {content}")
+            print(f"{agent_header}\n> {content}\n")
         else:
             # Fallback for unknown agents
-            print(f"\033[4m[{agent_name}]\033[0m:\n> {content}")
-        print()
+            print(f"\033[4m[{agent_name}]\033[0m:\n> {content}\n")
     
     # Legacy method - conversation coordination now handled by ChatSession
     async def handle_multi_agent_response(self, message):

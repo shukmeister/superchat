@@ -139,31 +139,31 @@ class ChatSession:
                 
                 # After Enter is pressed, overwrite with grey version
                 if user_input.strip():
+                    import os
+                    terminal_width = os.get_terminal_size().columns
                     lines = user_input.split('\n')
+                    
+                    # Calculate total lines including wrapped lines for all cases
+                    total_lines = 0
+                    for i, line in enumerate(lines):
+                        # First line has ">> " (3 chars), others have "   " (3 chars)
+                        line_length = len(line) + 3
+                        wrapped_lines = (line_length + terminal_width - 1) // terminal_width
+                        total_lines += max(1, wrapped_lines)
+                    
+                    # Clear all the lines that were displayed
+                    for _ in range(total_lines):
+                        print(f"\033[A\033[2K", end="")
+                    
+                    # Display all lines in grey using consistent ANSI escape codes
                     if len(lines) > 1:
-                        # Multi-line case: clear more lines to account for wrapping and terminal width
-                        import os
-                        terminal_width = os.get_terminal_size().columns
-                        
-                        # Calculate total lines including wrapped lines
-                        total_lines = 0
-                        for i, line in enumerate(lines):
-                            # First line has ">> " (3 chars), others have "   " (3 chars)
-                            line_length = len(line) + 3
-                            wrapped_lines = (line_length + terminal_width - 1) // terminal_width
-                            total_lines += max(1, wrapped_lines)
-                        
-                        # Clear exactly the lines we calculated minus 1
-                        for _ in range(total_lines - 1):
-                            print(f"\033[A\033[2K", end="")
-                        
-                        # Display all lines in grey using consistent ANSI escape codes
+                        # Multi-line case
                         print(f"\033[90m>> {lines[0]}\033[0m")
                         for line in lines[1:]:
                             print(f"\033[90m   {line}\033[0m")
                     else:
-                        # Single-line case: overwrite with grey version
-                        print(f"\033[A\033[2K\033[90m>> {user_input}\033[0m")
+                        # Single-line case
+                        print(f"\033[90m>> {user_input}\033[0m")
                 
                 # Add spacing after input
                 print()

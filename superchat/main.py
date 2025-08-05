@@ -74,6 +74,9 @@ def main():
     if config is None:
         return 0
     
+    # Start the session timer
+    config.start_session()
+    
     # Initialize chat session with pre-configured components
     chat_session = ChatSession(config)
     
