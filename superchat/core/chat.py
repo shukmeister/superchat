@@ -18,6 +18,8 @@ from setup.py and orchestrates the runtime conversation experience.
 
 import asyncio
 from prompt_toolkit.shortcuts import PromptSession
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit import print_formatted_text
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.parser import parse_input
@@ -133,14 +135,41 @@ class ChatSession:
     async def _async_chat_loop(self):
         while True:
             try:
-                # Get and parse user input
+                # Get user input (displays in default orange color while typing)
                 session = PromptSession()
                 user_input = await session.prompt_async(">> ")
                 
-                # Display the submitted message in grey (overwrite the previous line)
-                if user_input.strip():  # Only colorize non-empty input
-                    print(f"\033[A\033[2K\033[90m>> {user_input}\033[0m")
-                    print()
+                # After Enter is pressed, overwrite with grey version
+                if user_input.strip():
+                    lines = user_input.split('\n')
+                    if len(lines) > 1:
+                        # Multi-line case: clear more lines to account for wrapping and terminal width
+                        import os
+                        terminal_width = os.get_terminal_size().columns
+                        
+                        # Calculate total lines including wrapped lines
+                        total_lines = 0
+                        for i, line in enumerate(lines):
+                            # First line has ">> " (3 chars), others have "   " (3 chars)
+                            line_length = len(line) + 3
+                            wrapped_lines = (line_length + terminal_width - 1) // terminal_width
+                            total_lines += max(1, wrapped_lines)
+                        
+                        # Clear exactly the lines we calculated minus 1
+                        for _ in range(total_lines - 1):
+                            print(f"\033[A\033[2K", end="")
+                        
+                        # Display all lines in grey using prompt_toolkit's formatting
+                        print_formatted_text(HTML(f'<ansigray>>> {lines[0]}</ansigray>'))
+                        for line in lines[1:]:
+                            print_formatted_text(HTML(f'<ansigray>   {line}</ansigray>'))
+                    else:
+                        # Single-line case: overwrite with grey version
+                        print(f"\033[A\033[2K", end="")
+                        print_formatted_text(HTML(f'<ansigray>>> {user_input}</ansigray>'))
+                
+                # Add spacing after input
+                print()
                 
                 parsed = parse_input(user_input)
                 
