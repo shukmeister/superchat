@@ -18,8 +18,6 @@ from setup.py and orchestrates the runtime conversation experience.
 
 import asyncio
 from prompt_toolkit.shortcuts import PromptSession
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit import print_formatted_text
 from superchat.core.session import SessionConfig
 from superchat.core.model_client import ModelClientManager
 from superchat.utils.parser import parse_input
@@ -159,14 +157,13 @@ class ChatSession:
                         for _ in range(total_lines - 1):
                             print(f"\033[A\033[2K", end="")
                         
-                        # Display all lines in grey using prompt_toolkit's formatting
-                        print_formatted_text(HTML(f'<ansigray>>> {lines[0]}</ansigray>'))
+                        # Display all lines in grey using consistent ANSI escape codes
+                        print(f"\033[90m>> {lines[0]}\033[0m")
                         for line in lines[1:]:
-                            print_formatted_text(HTML(f'<ansigray>   {line}</ansigray>'))
+                            print(f"\033[90m   {line}\033[0m")
                     else:
                         # Single-line case: overwrite with grey version
-                        print(f"\033[A\033[2K", end="")
-                        print_formatted_text(HTML(f'<ansigray>>> {user_input}</ansigray>'))
+                        print(f"\033[A\033[2K\033[90m>> {user_input}\033[0m")
                 
                 # Add spacing after input
                 print()
