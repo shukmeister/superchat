@@ -27,7 +27,7 @@ class SessionConfig:
         self.session_active = False
         self.current_model = None
         self.debug_enabled = debug_enabled
-        self.chat_flow = "default"  # "default" (immediate team) or "staged" (1:1 then team)
+        self.chat_flow = "default"  # "default" (immediate team) or "staged" (staged chat)
         
         # Token tracking
         self.session_start_time = None

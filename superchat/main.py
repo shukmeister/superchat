@@ -56,7 +56,7 @@ def main():
             if args.debug:
                 print("Debug mode enabled")
             if args.flow:
-                flow_description = "immediate team chat" if args.flow == "default" else "1:1 then team debate"
+                flow_description = "default" if args.flow == "default" else "staged chat"
                 print(f"Chat flow: {args.flow} ({flow_description})")
         else:
             # CLI mode failed - show errors and fall back to setup mode
@@ -80,8 +80,11 @@ def main():
     
     # Use ChatSetup to configure all components
     setup = ChatSetup(config)
-    message_handler = setup.setup_complete_session()
-    chat_session.set_message_handler(message_handler)
+    setup_result = setup.setup_complete_session()
+    chat_session.set_message_handler(setup_result['message_handler'])
+    
+    # Set up staged flow manager if needed
+    chat_session.setup_staged_flow_manager(setup_result['agents'], setup_result['agent_mapping'])
     
     # Start the chat loop
     chat_session.start_chat_loop()

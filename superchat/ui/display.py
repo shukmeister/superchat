@@ -364,8 +364,9 @@ def setup_loop(debug_enabled=False):
                 if len(args) < 1:
                     print()
                     print("Usage: /flow <default|staged>")
-                    print("  default - Immediate team chat (current behavior)")
-                    print("  staged  - 1:1 conversations first, then team debate")
+                    print("  default - Default chat flow")
+                    print("  staged  - Staged chat flow")
+                    print()
                     print(f"Current flow: {config.get_chat_flow()}")
                     print()
                     continue
@@ -375,9 +376,9 @@ def setup_loop(debug_enabled=False):
                     if config.set_chat_flow(flow_type):
                         print()
                         if flow_type == "default":
-                            print("Chat flow: default (immediate team chat)")
+                            print("Chat flow: default")
                         else:
-                            print("Chat flow: staged (1:1 then team debate)")
+                            print("Chat flow: staged")
                         print()
                     else:
                         print()
@@ -386,8 +387,8 @@ def setup_loop(debug_enabled=False):
                 else:
                     print()
                     print("Invalid flow type. Use 'default' or 'staged'")
-                    print("  default - Immediate team chat (current behavior)")
-                    print("  staged  - 1:1 conversations first, then team debate")
+                    print("  default - Default chat flow")
+                    print("  staged  - Staged chat flow")
                     print()
                     
             elif command == "stats":

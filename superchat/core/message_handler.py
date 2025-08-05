@@ -20,9 +20,9 @@ class MessageHandler:
         self.team = None  # Will be set by setup for multi-agent mode
     
     # Process single agent message and display formatted response
-    async def handle_single_agent_response(self, message):
-        agent = self.agents[0]
-        model_name = self.config.models[0]
+    async def handle_single_agent_response(self, message, agent_index=0):
+        agent = self.agents[agent_index]
+        model_name = self.config.models[agent_index]
         debug_logger = get_debug_logger()
         
         # Create new message for agent (agent maintains its own conversation history)  

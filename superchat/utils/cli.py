@@ -37,7 +37,7 @@ def create_parser():
         '--flow', '-f',
         choices=['default', 'staged'],
         metavar='FLOW',
-        help='Set chat flow mode: default (immediate team chat) or staged (1:1 then team debate). Examples: -f staged, --flow default'
+        help='Set chat flow mode: default or staged. Examples: -f staged, --flow default'
     )
     
     return parser

@@ -23,6 +23,7 @@ from superchat.utils.parser import parse_input
 from superchat.utils.identifiers import get_model_identifier
 from superchat.utils.stats import display_stats, display_exit_summary
 from superchat.core.setup import ChatSetup
+from superchat.core.staged_flow import StagedFlowManager
 
 
 # Chat session coordinator that manages runtime conversation flow
@@ -35,10 +36,23 @@ class ChatSession:
         self.is_multi_agent = len(config.models) > 1
         # Message handler will be injected by setup.py after initialization
         self.message_handler = None
+        # Staged flow manager for staged conversations
+        self.staged_flow_manager = None
     
     # Setup - Inject pre-configured message handler from setup
     def set_message_handler(self, message_handler):
         self.message_handler = message_handler
+    
+    # Setup - Initialize staged flow manager for multi-agent staged conversations
+    def setup_staged_flow_manager(self, agents, agent_model_mapping):
+        """Initialize staged flow manager with agents and mapping."""
+        if self.config.is_staged_flow() and self.is_multi_agent:
+            self.staged_flow_manager = StagedFlowManager(
+                self.config, 
+                agents, 
+                self.message_handler, 
+                agent_model_mapping
+            )
     
     # Setup - Welcome screen - start the interactive chat loop with model display and >> prompt
     def start_chat_loop(self):
@@ -46,18 +60,32 @@ class ChatSession:
         if not self.message_handler:
             raise RuntimeError("Message handler not configured. Use setup.py to initialize session.")
         
-        # Display session information based on single or multi-agent mode
+        # Display session information based on flow mode and agent count
         if self.is_multi_agent:
-            print("Starting multi-agent debate with:")
-            for i, model_name in enumerate(self.config.models):
-                model_config = self.model_client_manager.get_model_config(model_name)
-                if model_config:
-                    model = model_config.get("model", model_name)
-                    identifier = get_model_identifier(i)
-                    print(f"  {identifier} [{model}]")
-                else:
-                    identifier = get_model_identifier(i)
-                    print(f"  {identifier} [{model_name}]")
+            if self.config.is_staged_flow():
+                print("Starting staged chat with:")
+                for i, model_name in enumerate(self.config.models):
+                    model_config = self.model_client_manager.get_model_config(model_name)
+                    if model_config:
+                        model = model_config.get("model", model_name)
+                        identifier = get_model_identifier(i)
+                        print(f"  {identifier} [{model}]")
+                    else:
+                        identifier = get_model_identifier(i)
+                        print(f"  {identifier} [{model_name}]")
+                if self.staged_flow_manager:
+                    print(f"\nStatus: {self.staged_flow_manager.get_status_display()}")
+            else:
+                print("Starting multi-agent debate with:")
+                for i, model_name in enumerate(self.config.models):
+                    model_config = self.model_client_manager.get_model_config(model_name)
+                    if model_config:
+                        model = model_config.get("model", model_name)
+                        identifier = get_model_identifier(i)
+                        print(f"  {identifier} [{model}]")
+                    else:
+                        identifier = get_model_identifier(i)
+                        print(f"  {identifier} [{model_name}]")
         else:
             model_name = self.config.models[0]
             model_config = self.model_client_manager.get_model_config(model_name)
@@ -101,6 +129,26 @@ class ChatSession:
                         display_stats(stats, self.config.models, self.model_client_manager)
                         print()
                         continue
+                    elif parsed['command'] == 'promote':
+                        if self.staged_flow_manager and self.staged_flow_manager.is_individual_phase():
+                            result = self.staged_flow_manager.promote_current_agent()
+                            print(result['message'])
+                            if result.get('all_promoted', False):
+                                # All agents promoted - transition to team phase
+                                transition_result = await self.staged_flow_manager.transition_to_team_phase()
+                                print(transition_result['message'])
+                                if transition_result.get('note'):
+                                    print(transition_result['note'])
+                            else:
+                                # Show status for next agent
+                                print(f"Status: {self.staged_flow_manager.get_status_display()}")
+                                print()
+                            continue
+                        else:
+                            print()
+                            print("/promote command is only available in staged flow individual phase")
+                            print()
+                            continue
                     else:
                         print(f"Unknown command: /{parsed['command']}")
                         print()
@@ -110,8 +158,25 @@ class ChatSession:
                 if parsed['type'] == 'message':
                     try:
                         if self.is_multi_agent:
-                            await self._handle_multi_agent_conversation(parsed['message'])
+                            # Check if using staged flow
+                            if self.staged_flow_manager and self.staged_flow_manager.is_individual_phase():
+                                # Staged flow: individual conversation
+                                handled = await self.staged_flow_manager.handle_individual_message(parsed['message'])
+                                if not handled:
+                                    print()
+                                    print("No more agents for individual conversations. Use /promote to advance.")
+                                    print()
+                            elif self.staged_flow_manager and self.staged_flow_manager.is_team_phase():
+                                # Staged flow: team phase (Phase 1 - not implemented yet)
+                                print()
+                                print("Team debate phase not yet implemented in Phase 1.")
+                                print("This will be available in Phase 2 of the staged chat system.")
+                                print()
+                            else:
+                                # Default flow: immediate team conversation
+                                await self._handle_multi_agent_conversation(parsed['message'])
                         else:
+                            # Single agent conversation
                             await self.message_handler.handle_single_agent_response(parsed['message'])
                     except Exception as e:
                         print(f"Error: {e}\n")
