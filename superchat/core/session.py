@@ -27,6 +27,7 @@ class SessionConfig:
         self.session_active = False
         self.current_model = None
         self.debug_enabled = debug_enabled
+        self.chat_flow = "default"  # "default" (immediate team) or "staged" (staged chat)
         
         # Token tracking
         self.session_start_time = None
@@ -66,6 +67,24 @@ class SessionConfig:
         # Update global debug logger
         from superchat.utils.debug import set_debug_enabled
         set_debug_enabled(enabled)
+    
+    # Configure chat flow setting
+    def set_chat_flow(self, flow):
+        """Set chat flow mode: 'default' or 'staged'."""
+        if flow in ["default", "staged"]:
+            self.chat_flow = flow
+            return True
+        return False
+    
+    # Get current chat flow setting
+    def get_chat_flow(self):
+        """Get current chat flow mode."""
+        return self.chat_flow
+    
+    # Check if using staged flow
+    def is_staged_flow(self):
+        """Check if session is using staged chat flow."""
+        return self.chat_flow == "staged"
     
     # Start the session and begin timing
     def start_session(self):
@@ -122,7 +141,8 @@ class SessionConfig:
             'voice': self.voice_enabled,
             'active': self.session_active,
             'current_model': self.current_model,
-            'debug': self.debug_enabled
+            'debug': self.debug_enabled,
+            'chat_flow': self.chat_flow
         }
     
     # Check if session has required configuration to start
@@ -142,4 +162,4 @@ class SessionConfig:
     
     
     def __str__(self):
-        return f"SessionConfig(models={self.models}, voice={self.voice_enabled}, active={self.session_active}, debug={self.debug_enabled})"
+        return f"SessionConfig(models={self.models}, voice={self.voice_enabled}, active={self.session_active}, debug={self.debug_enabled}, chat_flow={self.chat_flow})"

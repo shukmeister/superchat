@@ -10,7 +10,7 @@ def create_parser():
     parser = argparse.ArgumentParser(
         prog='superchat',
         description='AI-driven discussions and multi-agent debates',
-        usage='superchat [-h] [-m|--model MODEL] [-d|--debug] [-v|--voice]'
+        usage='superchat [-h] [-m|--model MODEL] [-d|--debug] [-v|--voice] [-f|--flow FLOW]'
     )
     
     parser.add_argument(
@@ -18,7 +18,7 @@ def create_parser():
         nargs='*',
         action='append',
         metavar='MODEL',
-        help='Add models to the chat. Examples: -m k2 lite (space-separated), -m "lite,k2" (comma-separated), -m lite -m k2 (multiple flags), --model k2 lite (long form)'
+        help='Add models to the chat. Examples: -m k2 lite (space-separated), -m "lite,k2" (comma-separated), -m lite -m k2 (multiple flags)'
     )
 
     parser.add_argument(
@@ -31,6 +31,13 @@ def create_parser():
         '--voice', '-v',
         action='store_true',
         help='Enable voice output mode (-v or --voice)'
+    )
+    
+    parser.add_argument(
+        '--flow', '-f',
+        choices=['default', 'staged'],
+        metavar='FLOW',
+        help='Set chat flow mode: default or staged. Examples: -f staged, --flow default'
     )
     
     return parser
@@ -156,5 +163,9 @@ def create_cli_config(args, resolved_models):
     # Set voice mode if specified
     if args.voice:
         config.set_voice_enabled(True)
+    
+    # Set chat flow if specified
+    if args.flow:
+        config.set_chat_flow(args.flow)
     
     return config

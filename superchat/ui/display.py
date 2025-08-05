@@ -101,6 +101,7 @@ def setup_loop(debug_enabled=False):
                 print("  /remove <name> - Remove a model from the chat")
                 print("  /list - Show available models")
                 print("  /status - Show current configuration")
+                print("  /flow <default|staged> - Set chat flow mode")
                 print("  /debug - Toggle debug mode for detailed message/token tracking")
                 print("  /start - Begin the chat session")
                 print("  /help - Show this help")
@@ -109,6 +110,7 @@ def setup_loop(debug_enabled=False):
                 print("Examples:")
                 print("  /model v3, flash lite, k2")
                 print("  /model deepseek")
+                print("  /flow staged")
                 print()
                 print("Chat commands (available after /start):")
                 print("  /stats - Show session statistics")
@@ -118,6 +120,7 @@ def setup_loop(debug_enabled=False):
                 print("  superchat -m k2 lite              # Space-separated models")
                 print("  superchat -m \"lite,k2\"            # Comma-separated models")
                 print("  superchat -m lite -m k2           # Multiple -m flags")
+                print("  superchat --flow staged -m k2     # Set flow and models")
                 print()
                 
             elif command == "list":
@@ -174,6 +177,9 @@ def setup_loop(debug_enabled=False):
                             print(f"- Model {identifier}: {model_key}")
                 else:
                     print("  No models selected")
+                
+                # Show chat flow mode
+                print(f"- Chat flow: {config.get_chat_flow()}")
                 
                 # Show debug mode status
                 debug_status = "enabled" if config.debug_enabled else "disabled"
@@ -353,6 +359,37 @@ def setup_loop(debug_enabled=False):
                 else:
                     print("Debug mode: disabled")
                 print()
+                
+            elif command == "flow":
+                if len(args) < 1:
+                    print()
+                    print("Usage: /flow <default|staged>")
+                    print("  default - Default chat flow")
+                    print("  staged  - Staged chat flow")
+                    print()
+                    print(f"Current flow: {config.get_chat_flow()}")
+                    print()
+                    continue
+                
+                flow_type = args[0].lower()
+                if flow_type in ["default", "staged"]:
+                    if config.set_chat_flow(flow_type):
+                        print()
+                        if flow_type == "default":
+                            print("Chat flow: default")
+                        else:
+                            print("Chat flow: staged")
+                        print()
+                    else:
+                        print()
+                        print("Failed to set chat flow")
+                        print()
+                else:
+                    print()
+                    print("Invalid flow type. Use 'default' or 'staged'")
+                    print("  default - Default chat flow")
+                    print("  staged  - Staged chat flow")
+                    print()
                     
             elif command == "stats":
                 print()

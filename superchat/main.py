@@ -55,6 +55,8 @@ def main():
                 print("Voice mode enabled")
             if args.debug:
                 print("Debug mode enabled")
+            if args.flow:
+                print(f"Chat flow: {args.flow}")
         else:
             # CLI mode failed - show errors and fall back to setup mode
             print("Unable to resolve all models from CLI arguments:")
@@ -63,19 +65,31 @@ def main():
             print("\nEntering interactive setup mode...\n")
             config = setup_loop(debug_enabled=args.debug)
     else:
-        # No CLI args - use normal setup loop
+        # No CLI args - use normal setup loop, but pass flow if specified
         config = setup_loop(debug_enabled=args.debug)
+        # If flow was specified via CLI but no models, apply it to the setup config
+        if config and args.flow:
+            config.set_chat_flow(args.flow)
     
     if config is None:
         return 0
+    
+    # Start the session timer
+    config.start_session()
     
     # Initialize chat session with pre-configured components
     chat_session = ChatSession(config)
     
     # Use ChatSetup to configure all components
     setup = ChatSetup(config)
-    message_handler = setup.setup_complete_session()
-    chat_session.set_message_handler(message_handler)
+    setup_result = setup.setup_complete_session()
+    chat_session.set_message_handler(setup_result['message_handler'])
+    
+    # Set up staged flow manager if needed
+    chat_session.setup_staged_flow_manager(setup_result['agents'], setup_result['agent_mapping'])
+    
+    # Set up command handler
+    chat_session.setup_command_handler()
     
     # Start the chat loop
     chat_session.start_chat_loop()

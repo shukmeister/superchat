@@ -20,9 +20,9 @@ class MessageHandler:
         self.team = None  # Will be set by setup for multi-agent mode
     
     # Process single agent message and display formatted response
-    async def handle_single_agent_response(self, message):
-        agent = self.agents[0]
-        model_name = self.config.models[0]
+    async def handle_single_agent_response(self, message, agent_index=0):
+        agent = self.agents[agent_index]
+        model_name = self.config.models[agent_index]
         debug_logger = get_debug_logger()
         
         # Create new message for agent (agent maintains its own conversation history)  
@@ -56,6 +56,15 @@ class MessageHandler:
         # Debug: Log response with comprehensive breakdown after displaying response
         if debug_logger.enabled:
             debug_logger.log_response_with_breakdown(response_content, usage_data, task_result)
+            
+        # Return transcript exchange data for staged flow capture
+        return {
+            'user_message': message,
+            'agent_response': response_content,
+            'agent_name': agent.name,
+            'model_name': model_name,
+            'agent_index': agent_index
+        }
     
     # Process team message and display all agent responses
     async def send_to_team(self, team, message):
@@ -120,11 +129,10 @@ class MessageHandler:
             identifier = agent_info['identifier']
             model_name = agent_info['model_name']
             agent_header = self._format_agent_display(identifier, model_name)
-            print(f"{agent_header}\n> {content}")
+            print(f"{agent_header}\n> {content}\n")
         else:
             # Fallback for unknown agents
-            print(f"\033[4m[{agent_name}]\033[0m:\n> {content}")
-        print()
+            print(f"\033[4m[{agent_name}]\033[0m:\n> {content}\n")
     
     # Legacy method - conversation coordination now handled by ChatSession
     async def handle_multi_agent_response(self, message):

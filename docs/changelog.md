@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.9] - 2025-08-04
+- Added staged chat flow system with 1:1 conversations followed by team debate
+	- Implemented /promote command to advance through agents in staged mode
+- Enhanced terminal input to handle multi-line prompts
+
 ## [0.8] - 2025-08-01
 - Enhanced CLI with flexible model input: -m k2 lite, -m "lite,k2", or -m lite -m k2
 - Added CLI shortcuts to bypass setup mode entirely

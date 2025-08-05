@@ -133,6 +133,7 @@ dmypy.json
 # superchat specific
 .superchat/
 *.log
+CLAUDE.md
 
 # macOS system files
 .DS_Store

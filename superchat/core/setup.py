@@ -20,7 +20,7 @@ class ChatSetup:
     
     # Initialize complete chat session with all components ready for runtime
     def setup_complete_session(self):
-        """Returns fully configured MessageHandler ready for chat runtime."""
+        """Returns fully configured MessageHandler and components for staged flow."""
         if not self.config.models:
             raise ValueError("At least one model required for chat session")
         
@@ -42,7 +42,13 @@ class ChatSetup:
         # Pass the team reference to message handler for multi-agent mode
         message_handler.team = team
         
-        return message_handler
+        # Return message handler and additional components for staged flow setup
+        return {
+            'message_handler': message_handler,
+            'agents': agents,
+            'agent_mapping': agent_mapping,
+            'team': team
+        }
     
     # Initialize all chat components and return them as a structured result (legacy method)
     def initialize_chat_components(self):
