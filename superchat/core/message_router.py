@@ -77,11 +77,12 @@ class MessageRouter:
             print()
     
     async def _handle_staged_team(self, message):
-        """Handle staged flow team phase (Phase 1 - not implemented yet)."""
-        print()
-        print("Team debate phase not yet implemented in Phase 1.")
-        print("This will be available in Phase 2 of the staged chat system.")
-        print()
+        """Handle staged flow team phase - route to team conversation."""
+        if not self.chat_session:
+            raise RuntimeError("ChatSession reference not set in MessageRouter")
+        
+        # Route to multi-agent team conversation
+        await self.chat_session._handle_multi_agent_conversation(message)
     
     async def _handle_default_team(self, message):
         """Handle default multi-agent team conversation."""

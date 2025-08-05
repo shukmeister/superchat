@@ -56,6 +56,15 @@ class MessageHandler:
         # Debug: Log response with comprehensive breakdown after displaying response
         if debug_logger.enabled:
             debug_logger.log_response_with_breakdown(response_content, usage_data, task_result)
+            
+        # Return transcript exchange data for staged flow capture
+        return {
+            'user_message': message,
+            'agent_response': response_content,
+            'agent_name': agent.name,
+            'model_name': model_name,
+            'agent_index': agent_index
+        }
     
     # Process team message and display all agent responses
     async def send_to_team(self, team, message):

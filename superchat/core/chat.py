@@ -65,7 +65,8 @@ class ChatSession:
         self.command_handler = ChatCommandHandler(
             self.config,
             self.staged_flow_manager,
-            self.model_client_manager
+            self.model_client_manager,
+            self  # Pass reference to this ChatSession
         )
         
         # Initialize message router with required dependencies
@@ -163,6 +164,34 @@ class ChatSession:
                 break
     
     ## conversation handler methods:
+    
+    # Transition from staged flow to team debate with assembled context
+    async def transition_staged_to_team_debate(self):
+        """Handle transition from staged 1:1 conversations to team debate."""
+        if not self.staged_flow_manager:
+            raise RuntimeError("Staged flow manager not initialized")
+            
+        # Execute the transition
+        transition_result = await self.staged_flow_manager.transition_to_team_phase()
+        
+        if not transition_result['success']:
+            print(f"Transition failed: {transition_result['message']}")
+            return False
+            
+        # Update message handler with new team
+        if 'team' in transition_result:
+            self.message_handler.team = transition_result['team']
+            
+        # Send assembled context to team to establish shared knowledge
+        assembled_context = transition_result['assembled_context']
+        print(f"Transitioning to team debate with {len(transition_result['promoted_agents'])} agents")
+        print("Sharing conversation context\n")
+        
+        # Send the assembled context as the first team message
+        await self.message_handler.send_to_team(self.message_handler.team, assembled_context)
+        
+        print("Team debate ready. Continue with your questions or comments.\n")
+        return True
 
     # Orchestrate multi-agent conversation using persistent team
     async def _handle_multi_agent_conversation(self, message):

@@ -56,8 +56,7 @@ def main():
             if args.debug:
                 print("Debug mode enabled")
             if args.flow:
-                flow_description = "default" if args.flow == "default" else "staged chat"
-                print(f"Chat flow: {args.flow} ({flow_description})")
+                print(f"Chat flow: {args.flow}")
         else:
             # CLI mode failed - show errors and fall back to setup mode
             print("Unable to resolve all models from CLI arguments:")
