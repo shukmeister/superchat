@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.10] - 2025-08-12
+- Added interactive API key setup wizard for seamless onboarding
+- Added graceful error handling for OpenRouter credits errors
+
 ## [0.9] - 2025-08-04
 - Added staged chat flow system with 1:1 conversations followed by team debate
 	- Implemented /promote command to advance through agents in staged mode

@@ -22,6 +22,7 @@ except ImportError:
     def load_dotenv():
         pass
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+from superchat.utils.api_key_wizard import run_api_key_wizard
 
 
 class ModelClientManager:
@@ -48,23 +49,21 @@ class ModelClientManager:
         # Load from .env file if it exists
         load_dotenv()
         self.api_key = os.getenv('OPENROUTER_API_KEY')
-        
+    
     
     # Validate that API key is properly configured
     def validate_setup(self):
-        """Validate that API key is available."""
+        """Validate that API key is available, with interactive setup wizard."""
         if not self.api_key:
-            print("OpenRouter API key not found. Set it up using one of these methods:")
-            print()
-            print("1. Create .env file in project root:")
-            print("   OPENROUTER_API_KEY=your_key_here")
-            print()
-            print("2. Environment variable:")
-            print("   export OPENROUTER_API_KEY=your_key_here")
-            print()
-            print("Get your key from: https://openrouter.ai/keys")
-            print("After creating your API key, add credits at: https://openrouter.ai/credits")
-            return False
+            # Run the API key wizard
+            api_key = run_api_key_wizard()
+            if api_key:
+                # Update our instance with the new key
+                self.api_key = api_key
+                return True
+            else:
+                return False
+        
         return True
     
     # Get list of all configured model names
