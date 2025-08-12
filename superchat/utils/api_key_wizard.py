@@ -78,13 +78,14 @@ def run_api_key_wizard():
     print("OpenRouter API key not found.")
     print()
     print("To use superchat, you need an OpenRouter API key:")
+    print()
     print("1. Go to https://openrouter.ai/keys")
     print("2. Sign up for a free account")
     print("3. Create a new API key")
     print("4. Add credits to your account at https://openrouter.ai/credits")
     print()
     print("Privacy Notice: We do not save or store your API key anywhere.")
-    print("   Feel free to review the source code to verify: https://github.com/shukmeister/superchat")
+    print(" - Feel free to review the source code to verify: https://github.com/shukmeister/superchat")
     print()
     
     try:
@@ -93,15 +94,15 @@ def run_api_key_wizard():
         
         # Basic validation - check if it looks like an OpenRouter key
         if not api_key or not api_key.strip():
-            print("No API key entered. Exiting.")
+            print("\nNo API key entered. Exiting.")
             return None
         
         api_key = api_key.strip()
         if not api_key.startswith('sk-or-'):
-            print("Warning: API key should start with 'sk-or-'. Continuing anyway...")
+            print("\nWarning: API key should start with 'sk-or-'. Continuing anyway...")
         
         # Save to .env file
-        print("Saving API key to ~/.env...")
+        print("\nSaving API key to ~/.env...")
         if save_api_key_to_env(api_key):
             print("✓ API key saved successfully!")
             
