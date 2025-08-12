@@ -49,19 +49,6 @@ class ModelClientManager:
         load_dotenv()
         self.api_key = os.getenv('OPENROUTER_API_KEY')
         
-        if not self.api_key:
-            # Try local config file as fallback
-            config_file = Path.home() / '.superchat' / 'config'
-            if config_file.exists():
-                try:
-                    with open(config_file, 'r') as f:
-                        for line in f:
-                            line = line.strip()
-                            if line.startswith('OPENROUTER_API_KEY='):
-                                self.api_key = line.split('=', 1)[1].strip('"\'')
-                                break
-                except Exception:
-                    pass
     
     # Validate that API key is properly configured
     def validate_setup(self):
@@ -74,10 +61,6 @@ class ModelClientManager:
             print()
             print("2. Environment variable:")
             print("   export OPENROUTER_API_KEY=your_key_here")
-            print()
-            print("3. Local config file:")
-            print(f"   Create: {Path.home()}/.superchat/config")
-            print("   Add: OPENROUTER_API_KEY=your_key_here")
             print()
             print("Get your key from: https://openrouter.ai/keys")
             return False
