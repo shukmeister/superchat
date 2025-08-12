@@ -379,8 +379,10 @@ class StagedFlowManager:
             raise ValueError("Need at least 2 promoted agents to create team")
             
         # Create new team with promoted agents
-        # Set max_turns = number of agents (each agent responds once per user message)
-        team = RoundRobinGroupChat(promoted_agents, max_turns=len(promoted_agents))
+        # Set max_turns = number of agents × debate rounds (each agent responds N times per user message)
+        debate_rounds = self.config.get_debate_rounds()
+        max_turns = len(promoted_agents) * debate_rounds
+        team = RoundRobinGroupChat(promoted_agents, max_turns=max_turns)
         
         return team
 

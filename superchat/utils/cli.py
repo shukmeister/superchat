@@ -10,7 +10,7 @@ def create_parser():
     parser = argparse.ArgumentParser(
         prog='superchat',
         description='AI-driven discussions and multi-agent debates',
-        usage='superchat [-h] [-m|--model MODEL] [-d|--debug] [-v|--voice] [-f|--flow FLOW]'
+        usage='superchat [-h] [-m|--model MODEL] [-d|--debug] [-v|--voice] [-f|--flow FLOW] [-r|--rounds ROUNDS]'
     )
     
     parser.add_argument(
@@ -18,26 +18,34 @@ def create_parser():
         nargs='*',
         action='append',
         metavar='MODEL',
-        help='Add models to the chat. Examples: -m k2 lite (space-separated), -m "lite,k2" (comma-separated), -m lite -m k2 (multiple flags)'
+        help='Add models to the chat.\nExamples: -m k2 lite (space-separated), -m "lite,k2" (comma-separated), -m lite -m k2 (multiple flags)'
     )
 
     parser.add_argument(
         '--debug', '-d',
         action='store_true',
-        help='Enable debug mode with detailed message and token tracking (-d or --debug)'
+        help='Enable debug mode with detailed message and token tracking.\nExamples: -d or --debug'
     )
 
     parser.add_argument(
         '--voice', '-v',
         action='store_true',
-        help='Enable voice output mode (-v or --voice)'
+        help='Enable voice output mode.\nExamples: -v or --voice'
     )
     
     parser.add_argument(
         '--flow', '-f',
         choices=['default', 'staged'],
         metavar='FLOW',
-        help='Set chat flow mode: default or staged. Examples: -f staged, --flow default'
+        help='Set chat flow mode: default or staged.\nExamples: -f staged, --flow default'
+    )
+    
+    parser.add_argument(
+        '--rounds', '-r',
+        type=int,
+        metavar='ROUNDS',
+        default=1,
+        help='Set number of debate rounds for multi-agent conversations (1-5, default: 1).\nExamples: -r 3, --rounds 2'
     )
     
     return parser
@@ -167,5 +175,10 @@ def create_cli_config(args, resolved_models):
     # Set chat flow if specified
     if args.flow:
         config.set_chat_flow(args.flow)
+    
+    # Set debate rounds if specified and valid
+    if args.rounds:
+        if not config.set_debate_rounds(args.rounds):
+            print(f"Warning: Invalid rounds value {args.rounds}. Using default of 1.")
     
     return config
