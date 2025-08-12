@@ -63,6 +63,7 @@ class ModelClientManager:
             print("   export OPENROUTER_API_KEY=your_key_here")
             print()
             print("Get your key from: https://openrouter.ai/keys")
+            print("After creating your API key, add credits at: https://openrouter.ai/credits")
             return False
         return True
     

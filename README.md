@@ -40,7 +40,7 @@ Run this command to add the install location to your PATH:
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
 ```
 
-## Getting Your API Key
+## Configuration
 
 Before using superchat, you need an OpenRouter API key:
 
@@ -48,10 +48,9 @@ Before using superchat, you need an OpenRouter API key:
 2. Sign up for a free account
 3. Create a new API key
 4. Copy the key (starts with `sk-or-`)
+5. Add credits to your account at https://openrouter.ai/credits
 
-## Configuration
-
-Replace `ADD-YOUR-KEY-HERE` with your real API key and run:
+Then run the following command but replace `ADD-YOUR-KEY-HERE` with your real API key and run:
 
 ```bash
 echo "OPENROUTER_API_KEY=ADD-YOUR-KEY-HERE" > ~/.env
