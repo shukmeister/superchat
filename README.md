@@ -77,6 +77,42 @@ Or use the short alias:
 sc
 ```
 
+### Debate Modes
+
+Superchat supports two different debate modes when using multiple AI models:
+
+#### Default Mode
+In default mode, all AI agents join a shared conversation immediately. Each user message triggers responses from all agents in a round-robin format.
+
+```bash
+# Start default mode with multiple models
+superchat -m llama claude deepseek
+```
+
+#### Staged Mode
+In staged mode, you first have individual 1:1 conversations with each agent, then transition to a team debate with shared context from all conversations.
+
+```bash
+# Start staged mode with multiple models
+superchat --flow staged -m llama claude deepseek
+```
+
+**Staged Mode Commands:**
+- `/promote` - Promote current agent to team debate and move to next agent
+
+**Staged Mode Benefits:**
+- Get individual perspectives before group discussion
+- Agents share context from 1:1 conversations in team phase
+
+### Debate Rounds
+
+Control how many times each agent responds per user message in team debates:
+
+```bash
+# Set debate rounds (1-5, default: 1)
+superchat -r 3 -m llama claude
+```
+
 ## Updating
 
 To update to the latest version:
