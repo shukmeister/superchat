@@ -80,6 +80,26 @@ class ModelClientManager:
             return None
         return self.models_config["models"][model_name]
     
+    # Get the display label for a specific model (for chat)
+    def get_model_label(self, model_name):
+        """Get the display label for a specific model."""
+        model_config = self.get_model_config(model_name)
+        if model_config and "label" in model_config:
+            return model_config["label"]
+        # Fallback to model field or model name if label not found
+        if model_config and "model" in model_config:
+            return model_config["model"]
+        return model_name
+    
+    # Get the display name for setup/configuration (detailed name)
+    def get_model_display_name(self, model_name):
+        """Get the detailed display name for setup/configuration screens."""
+        model_config = self.get_model_config(model_name)
+        if model_config:
+            from superchat.utils.model_resolver import get_display_name
+            return get_display_name(model_config)
+        return model_name
+    
     # Create AutoGen client for communicating with a specific model
     def create_model_client(self, model_name, skip_validation=False):
         """Create OpenAI chat completion client for the specified model."""

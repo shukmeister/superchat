@@ -3,6 +3,9 @@
 ## [0.10] - 2025-08-12
 - Added interactive API key setup wizard for seamless onboarding
 - Added graceful error handling for OpenRouter credits errors
+- Number of debate rounds is now configurable with the /rounds command in setup mode, or with -r/--rounds as a CLI variable
+- Improved labeling of each model name in chats
+- Improved usage examples in README
 
 ## [0.9] - 2025-08-04
 - Added staged chat flow system with 1:1 conversations followed by team debate

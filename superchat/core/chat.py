@@ -91,14 +91,9 @@ class ChatSession:
             if self.config.is_staged_flow():
                 print("Starting staged chat with:")
                 for i, model_name in enumerate(self.config.models):
-                    model_config = self.model_client_manager.get_model_config(model_name)
-                    if model_config:
-                        model = model_config.get("model", model_name)
-                        identifier = get_model_identifier(i)
-                        print(f"  {identifier} [{model}]")
-                    else:
-                        identifier = get_model_identifier(i)
-                        print(f"  {identifier} [{model_name}]")
+                    label = self.model_client_manager.get_model_label(model_name)
+                    identifier = get_model_identifier(i)
+                    print(f"  {identifier} [{label}]")
                 if self.staged_flow_manager:
                     status_display = self.staged_flow_manager.get_status_display()
                     if self.staged_flow_manager.awaiting_initial_question:
@@ -108,22 +103,13 @@ class ChatSession:
             else:
                 print("Starting multi-agent debate with:")
                 for i, model_name in enumerate(self.config.models):
-                    model_config = self.model_client_manager.get_model_config(model_name)
-                    if model_config:
-                        model = model_config.get("model", model_name)
-                        identifier = get_model_identifier(i)
-                        print(f"  {identifier} [{model}]")
-                    else:
-                        identifier = get_model_identifier(i)
-                        print(f"  {identifier} [{model_name}]")
+                    label = self.model_client_manager.get_model_label(model_name)
+                    identifier = get_model_identifier(i)
+                    print(f"  {identifier} [{label}]")
         else:
             model_name = self.config.models[0]
-            model_config = self.model_client_manager.get_model_config(model_name)
-            if model_config:
-                model = model_config.get("model", model_name)
-                print(f"Starting chat with [{model}]")
-            else:
-                print(f"Starting chat with [{model_name}]")
+            label = self.model_client_manager.get_model_label(model_name)
+            print(f"Starting chat with [{label}]")
         print()
         
         # Start the main runtime conversation loop

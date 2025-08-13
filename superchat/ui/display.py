@@ -143,7 +143,7 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                         model = model_config.get("model", "")
                         release = model_config.get("release", "")
                         description = model_config.get("description", "")
-                        full_name = get_display_name(model_config)
+                        full_name = model_manager.get_model_display_name(model_name)
                         input_cost = model_config.get("input_cost", "N/A")
                         output_cost = model_config.get("output_cost", "N/A")
                         context_length = model_config.get("context_length", "N/A")
@@ -177,12 +177,8 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                 if config.models:
                     for i, model_key in enumerate(config.models):
                         identifier = get_model_identifier(i)
-                        model_config = model_manager.get_model_config(model_key)
-                        if model_config:
-                            display_name = get_display_name(model_config)
-                            print(f"  - {identifier}: {display_name}")
-                        else:
-                            print(f"  - {identifier}: {model_key}")
+                        display_name = model_manager.get_model_display_name(model_key)
+                        print(f"  - {identifier}: {display_name}")
                 else:
                     print("  - No models selected")
                 
@@ -230,19 +226,11 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                         if result.action_type == "selected":
                             model_key = result.model_key
                             if config.add_model(model_key):
-                                model_config = model_manager.get_model_config(model_key)
-                                if model_config:
-                                    display_name = get_display_name(model_config)
-                                    added_models.append(display_name)
-                                else:
-                                    added_models.append(model_key)
+                                display_name = model_manager.get_model_display_name(model_key)
+                                added_models.append(display_name)
                             else:
-                                model_config = model_manager.get_model_config(model_key)
-                                if model_config:
-                                    display_name = get_display_name(model_config)
-                                    already_selected.append(display_name)
-                                else:
-                                    already_selected.append(model_key)
+                                display_name = model_manager.get_model_display_name(model_key)
+                                already_selected.append(display_name)
                         else:
                             not_found.append(f"'{model_input}' - {result.message}")
                     
@@ -279,22 +267,13 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                     
                     if config.add_model(model_key):
                         print()
-                        model_config = model_manager.get_model_config(model_key)
-                        if model_config:
-                            display_name = get_display_name(model_config)
-                            print(f"Added model: {display_name}")
-                            print()
-                        else:
-                            print(f"Added model: {model_key}")
-                            print()
+                        display_name = model_manager.get_model_display_name(model_key)
+                        print(f"Added model: {display_name}")
+                        print()
                     else:
                         print()
-                        model_config = model_manager.get_model_config(model_key)
-                        if model_config:
-                            display_name = get_display_name(model_config)
-                            print(f"Model {display_name} already selected")
-                        else:
-                            print(f"Model {model_key} already selected")
+                        display_name = model_manager.get_model_display_name(model_key)
+                        print(f"Model {display_name} already selected")
                         print()
             
             elif command == "remove":
@@ -304,12 +283,8 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                     if config.models:
                         selected_names = []
                         for model_key in config.models:
-                            model_config = model_manager.get_model_config(model_key)
-                            if model_config:
-                                display_name = get_display_name(model_config)
-                                selected_names.append(display_name)
-                            else:
-                                selected_names.append(model_key)
+                            display_name = model_manager.get_model_display_name(model_key)
+                            selected_names.append(display_name)
                         print(f"Currently selected: {', '.join(selected_names)}")
                     else:
                         print("No models currently selected")
@@ -341,22 +316,13 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                 
                 if config.remove_model(model_key):
                     print()
-                    model_config = model_manager.get_model_config(model_key)
-                    if model_config:
-                        display_name = get_display_name(model_config)
-                        print(f"Removed model: {display_name}")
-                        print()
-                    else:
-                        print(f"Removed model: {model_key}")
-                        print()
+                    display_name = model_manager.get_model_display_name(model_key)
+                    print(f"Removed model: {display_name}")
+                    print()
                 else:
                     print()
-                    model_config = model_manager.get_model_config(model_key)
-                    if model_config:
-                        display_name = get_display_name(model_config)
-                        print(f"Model {display_name} was not in configuration")
-                    else:
-                        print(f"Model {model_key} was not in configuration")
+                    display_name = model_manager.get_model_display_name(model_key)
+                    print(f"Model {display_name} was not in configuration")
                     print()
             
             elif command == "debug":

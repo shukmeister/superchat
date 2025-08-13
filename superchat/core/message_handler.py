@@ -168,15 +168,11 @@ class MessageHandler:
                 return last_message.text
         return "No response received"
     
-    # Format agent header with underlined model name only
+    # Format agent header with underlined model label
     def _format_agent_display(self, identifier, model_name):
-        """Create formatted agent header with underlined model name."""
-        model_config = self.model_client_manager.get_model_config(model_name)
-        if model_config:
-            model = model_config.get("model", model_name)
-            return f"[{identifier}] \033[4m{model}\033[0m:"
-        else:
-            return f"[{identifier}] \033[4m{model_name}\033[0m:"
+        """Create formatted agent header with underlined model label."""
+        label = self.model_client_manager.get_model_label(model_name)
+        return f"[{identifier}] \033[4m{label}\033[0m:"
     
     # Handle OpenRouter-specific errors gracefully
     def _handle_openrouter_error(self, error):
