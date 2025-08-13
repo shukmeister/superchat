@@ -36,7 +36,12 @@ class MessageHandler:
         
         # Get agent response with loading indicator
         with Halo(text="Processing", spinner="dots"):
-            task_result = await agent.run(task=[new_message])
+            try:
+                task_result = await agent.run(task=[new_message])
+            except Exception as e:
+                if self._handle_openrouter_error(e):
+                    return None
+                raise
         
         # Track token usage for stats
         usage_data = extract_usage_from_task_result(task_result)
@@ -84,7 +89,12 @@ class MessageHandler:
             
             # Send message to team with loading indicator
             with Halo(text="Processing", spinner="dots"):
-                task_result = await team.run(task=message)
+                try:
+                    task_result = await team.run(task=message)
+                except Exception as e:
+                    if self._handle_openrouter_error(e):
+                        return None
+                    raise
             
             # Track token usage from all agents in this conversation
             usage_data = extract_usage_from_task_result(task_result)
@@ -158,12 +168,32 @@ class MessageHandler:
                 return last_message.text
         return "No response received"
     
-    # Format agent header with underlined model name only
+    # Format agent header with underlined model label
     def _format_agent_display(self, identifier, model_name):
-        """Create formatted agent header with underlined model name."""
-        model_config = self.model_client_manager.get_model_config(model_name)
-        if model_config:
-            model = model_config.get("model", model_name)
-            return f"[{identifier}] \033[4m{model}\033[0m:"
-        else:
-            return f"[{identifier}] \033[4m{model_name}\033[0m:"
+        """Create formatted agent header with underlined model label."""
+        label = self.model_client_manager.get_model_label(model_name)
+        return f"[{identifier}] \033[4m{label}\033[0m:"
+    
+    # Handle OpenRouter-specific errors gracefully
+    def _handle_openrouter_error(self, error):
+        """Handle OpenRouter credits/quota errors. Returns True if handled, False otherwise."""
+        if self._is_openrouter_quota_error(error):
+            print("\nOpenRouter Credits Error: Insufficient credits to complete this request.")
+            print("Add credits at: https://openrouter.ai/credits")
+            print()
+            return True
+        return False
+    
+    # Check if error is related to OpenRouter credits/quota
+    def _is_openrouter_quota_error(self, error):
+        """Check if the error is related to OpenRouter credits or quota limits."""
+        error_str = str(error).lower()
+        # Check for common OpenRouter quota/credits error indicators
+        return any(indicator in error_str for indicator in [
+            "can only afford",
+            "insufficient credits", 
+            "quota exceeded",
+            "402",  # HTTP status code for payment required
+            "credit limit",
+            "balance"
+        ])

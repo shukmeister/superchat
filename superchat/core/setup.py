@@ -119,8 +119,10 @@ class ChatSetup:
         if not is_multi_agent:
             return None
         
-        # Set up team with max_turns = number of agents (each agent responds once per user message)
-        return RoundRobinGroupChat(agents, max_turns=len(agents))
+        # Set up team with max_turns = number of agents × debate rounds (each agent responds N times per user message)
+        debate_rounds = self.config.get_debate_rounds()
+        max_turns = len(agents) * debate_rounds
+        return RoundRobinGroupChat(agents, max_turns=max_turns)
     
     # Get appropriate system prompt for single or multi-agent mode
     def get_system_prompt(self, model_name, index, is_multi_agent):

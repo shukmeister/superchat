@@ -1,6 +1,7 @@
 {
   "models": {
     "kimi-k2": {
+      "label": "K2",
       "company": "Moonshot",
       "family": "Kimi",
       "model": "K2",
@@ -20,6 +21,7 @@
       }
     },
     "deepseek-v3": {
+      "label": "V3",
       "company": "DeepSeek",
       "family": "DeepSeek",
       "model": "V3",
@@ -39,6 +41,7 @@
       }
     },
     "deepseek-r1": {
+      "label": "R1",
       "company": "DeepSeek",
       "family": "DeepSeek",
       "model": "R1",
@@ -58,6 +61,7 @@
       }
     },
     "grok-4": {
+      "label": "Grok 4",
       "company": "xAI",
       "family": "Grok",
       "model": "4",
@@ -77,6 +81,7 @@
       }
     },
     "llama-4-maverick": {
+      "label": "Maverick 4",
       "company": "Meta",
       "family": "Llama",
       "model": "Maverick 4",
@@ -96,6 +101,7 @@
       }
     },
     "gemini-2.5-flash-lite": {
+      "label": "Gemini 2.5 Flash Lite",
       "company": "Google",
       "family": "Gemini",
       "model": "2.5 Flash Lite",
@@ -115,6 +121,7 @@
       }
     },
     "gemini-2.5-flash": {
+      "label": "Gemini 2.5 Flash",
       "company": "Google",
       "family": "Gemini",
       "model": "2.5 Flash",
@@ -134,6 +141,7 @@
       }
     },
     "gemini-2.5-pro": {
+      "label": "Gemini 2.5 Pro",
       "company": "Google",
       "family": "Gemini",
       "model": "2.5 Pro",
@@ -153,6 +161,7 @@
       }
     },
     "qwen3-coder": {
+      "label": "Qwen3 Coder",
       "company": "Alibaba",
       "family": "Qwen",
       "model": "Qwen3 Coder",

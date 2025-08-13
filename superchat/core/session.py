@@ -28,6 +28,7 @@ class SessionConfig:
         self.current_model = None
         self.debug_enabled = debug_enabled
         self.chat_flow = "default"  # "default" (immediate team) or "staged" (staged chat)
+        self.debate_rounds = 1  # Number of rounds for multi-agent debates (default: 1)
         
         # Token tracking
         self.session_start_time = None
@@ -86,6 +87,19 @@ class SessionConfig:
         """Check if session is using staged chat flow."""
         return self.chat_flow == "staged"
     
+    # Configure debate rounds setting
+    def set_debate_rounds(self, rounds):
+        """Set number of debate rounds for multi-agent conversations."""
+        if isinstance(rounds, int) and 1 <= rounds <= 5:
+            self.debate_rounds = rounds
+            return True
+        return False
+    
+    # Get current debate rounds setting
+    def get_debate_rounds(self):
+        """Get current number of debate rounds."""
+        return self.debate_rounds
+    
     # Start the session and begin timing
     def start_session(self):
         """Mark session as active and set current model."""
@@ -142,7 +156,8 @@ class SessionConfig:
             'active': self.session_active,
             'current_model': self.current_model,
             'debug': self.debug_enabled,
-            'chat_flow': self.chat_flow
+            'chat_flow': self.chat_flow,
+            'debate_rounds': self.debate_rounds
         }
     
     # Check if session has required configuration to start
@@ -162,4 +177,4 @@ class SessionConfig:
     
     
     def __str__(self):
-        return f"SessionConfig(models={self.models}, voice={self.voice_enabled}, active={self.session_active}, debug={self.debug_enabled}, chat_flow={self.chat_flow})"
+        return f"SessionConfig(models={self.models}, voice={self.voice_enabled}, active={self.session_active}, debug={self.debug_enabled}, chat_flow={self.chat_flow}, debate_rounds={self.debate_rounds})"

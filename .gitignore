@@ -131,7 +131,6 @@ dmypy.json
 .pyre/
 
 # superchat specific
-.superchat/
 *.log
 CLAUDE.md
 

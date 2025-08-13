@@ -63,13 +63,10 @@ def main():
             for error in errors:
                 print(f"  {error}")
             print("\nEntering interactive setup mode...\n")
-            config = setup_loop(debug_enabled=args.debug)
+            config = setup_loop(debug_enabled=args.debug, initial_flow=args.flow, initial_rounds=args.rounds)
     else:
-        # No CLI args - use normal setup loop, but pass flow if specified
-        config = setup_loop(debug_enabled=args.debug)
-        # If flow was specified via CLI but no models, apply it to the setup config
-        if config and args.flow:
-            config.set_chat_flow(args.flow)
+        # No CLI args - use normal setup loop, but pass CLI arguments if specified
+        config = setup_loop(debug_enabled=args.debug, initial_flow=args.flow, initial_rounds=args.rounds)
     
     if config is None:
         return 0

@@ -35,7 +35,7 @@ def display_banner():
 
 
 
-def setup_loop(debug_enabled=False):
+def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
     """Main setup loop for configuring chat parameters."""
     display_banner()
     
@@ -45,6 +45,12 @@ def setup_loop(debug_enabled=False):
     
     # Initialize session config and model client manager
     config = SessionConfig(debug_enabled=debug_enabled)
+    
+    # Apply initial CLI arguments
+    if initial_flow:
+        config.set_chat_flow(initial_flow)
+    if initial_rounds and initial_rounds != 1:
+        config.set_debate_rounds(initial_rounds)
     model_manager = ModelClientManager()
     
     # Check for API key on startup
@@ -102,6 +108,7 @@ def setup_loop(debug_enabled=False):
                 print("  /list - Show available models")
                 print("  /status - Show current configuration")
                 print("  /flow <default|staged> - Set chat flow mode")
+                print("  /rounds <1-5> - Set number of debate rounds for multi-agent conversations")
                 print("  /debug - Toggle debug mode for detailed message/token tracking")
                 print("  /start - Begin the chat session")
                 print("  /help - Show this help")
@@ -111,6 +118,7 @@ def setup_loop(debug_enabled=False):
                 print("  /model v3, flash lite, k2")
                 print("  /model deepseek")
                 print("  /flow staged")
+                print("  /rounds 3")
                 print()
                 print("Chat commands (available after /start):")
                 print("  /stats - Show session statistics")
@@ -135,7 +143,7 @@ def setup_loop(debug_enabled=False):
                         model = model_config.get("model", "")
                         release = model_config.get("release", "")
                         description = model_config.get("description", "")
-                        full_name = get_display_name(model_config)
+                        full_name = model_manager.get_model_display_name(model_name)
                         input_cost = model_config.get("input_cost", "N/A")
                         output_cost = model_config.get("output_cost", "N/A")
                         context_length = model_config.get("context_length", "N/A")
@@ -165,21 +173,20 @@ def setup_loop(debug_enabled=False):
                 print()
                 print("Configuration:")
                 print()
+                print("- Models:")
                 if config.models:
                     for i, model_key in enumerate(config.models):
-                        slot_num = i + 1
                         identifier = get_model_identifier(i)
-                        model_config = model_manager.get_model_config(model_key)
-                        if model_config:
-                            display_name = get_display_name(model_config)
-                            print(f"- Model {identifier}: {display_name}")
-                        else:
-                            print(f"- Model {identifier}: {model_key}")
+                        display_name = model_manager.get_model_display_name(model_key)
+                        print(f"  - {identifier}: {display_name}")
                 else:
-                    print("  No models selected")
+                    print("  - No models selected")
                 
                 # Show chat flow mode
                 print(f"- Chat flow: {config.get_chat_flow()}")
+                
+                # Show debate rounds
+                print(f"- Debate rounds: {config.get_debate_rounds()}")
                 
                 # Show debug mode status
                 debug_status = "enabled" if config.debug_enabled else "disabled"
@@ -219,19 +226,11 @@ def setup_loop(debug_enabled=False):
                         if result.action_type == "selected":
                             model_key = result.model_key
                             if config.add_model(model_key):
-                                model_config = model_manager.get_model_config(model_key)
-                                if model_config:
-                                    display_name = get_display_name(model_config)
-                                    added_models.append(display_name)
-                                else:
-                                    added_models.append(model_key)
+                                display_name = model_manager.get_model_display_name(model_key)
+                                added_models.append(display_name)
                             else:
-                                model_config = model_manager.get_model_config(model_key)
-                                if model_config:
-                                    display_name = get_display_name(model_config)
-                                    already_selected.append(display_name)
-                                else:
-                                    already_selected.append(model_key)
+                                display_name = model_manager.get_model_display_name(model_key)
+                                already_selected.append(display_name)
                         else:
                             not_found.append(f"'{model_input}' - {result.message}")
                     
@@ -268,22 +267,13 @@ def setup_loop(debug_enabled=False):
                     
                     if config.add_model(model_key):
                         print()
-                        model_config = model_manager.get_model_config(model_key)
-                        if model_config:
-                            display_name = get_display_name(model_config)
-                            print(f"Added model: {display_name}")
-                            print()
-                        else:
-                            print(f"Added model: {model_key}")
-                            print()
+                        display_name = model_manager.get_model_display_name(model_key)
+                        print(f"Added model: {display_name}")
+                        print()
                     else:
                         print()
-                        model_config = model_manager.get_model_config(model_key)
-                        if model_config:
-                            display_name = get_display_name(model_config)
-                            print(f"Model {display_name} already selected")
-                        else:
-                            print(f"Model {model_key} already selected")
+                        display_name = model_manager.get_model_display_name(model_key)
+                        print(f"Model {display_name} already selected")
                         print()
             
             elif command == "remove":
@@ -293,12 +283,8 @@ def setup_loop(debug_enabled=False):
                     if config.models:
                         selected_names = []
                         for model_key in config.models:
-                            model_config = model_manager.get_model_config(model_key)
-                            if model_config:
-                                display_name = get_display_name(model_config)
-                                selected_names.append(display_name)
-                            else:
-                                selected_names.append(model_key)
+                            display_name = model_manager.get_model_display_name(model_key)
+                            selected_names.append(display_name)
                         print(f"Currently selected: {', '.join(selected_names)}")
                     else:
                         print("No models currently selected")
@@ -330,22 +316,13 @@ def setup_loop(debug_enabled=False):
                 
                 if config.remove_model(model_key):
                     print()
-                    model_config = model_manager.get_model_config(model_key)
-                    if model_config:
-                        display_name = get_display_name(model_config)
-                        print(f"Removed model: {display_name}")
-                        print()
-                    else:
-                        print(f"Removed model: {model_key}")
-                        print()
+                    display_name = model_manager.get_model_display_name(model_key)
+                    print(f"Removed model: {display_name}")
+                    print()
                 else:
                     print()
-                    model_config = model_manager.get_model_config(model_key)
-                    if model_config:
-                        display_name = get_display_name(model_config)
-                        print(f"Model {display_name} was not in configuration")
-                    else:
-                        print(f"Model {model_key} was not in configuration")
+                    display_name = model_manager.get_model_display_name(model_key)
+                    print(f"Model {display_name} was not in configuration")
                     print()
             
             elif command == "debug":
@@ -389,6 +366,32 @@ def setup_loop(debug_enabled=False):
                     print("Invalid flow type. Use 'default' or 'staged'")
                     print("  default - Default chat flow")
                     print("  staged  - Staged chat flow")
+                    print()
+                    
+            elif command == "rounds":
+                if len(args) < 1:
+                    print()
+                    print("Usage: /rounds <1-5>")
+                    print("  Set number of debate rounds for multi-agent conversations")
+                    print("  Only affects debates (multi-agent mode)")
+                    print()
+                    print(f"Current rounds: {config.get_debate_rounds()}")
+                    print()
+                    continue
+                
+                try:
+                    rounds = int(args[0])
+                    if config.set_debate_rounds(rounds):
+                        print()
+                        print(f"Debate rounds: {rounds}")
+                        print()
+                    else:
+                        print()
+                        print("Invalid rounds value. Must be between 1 and 5.")
+                        print()
+                except ValueError:
+                    print()
+                    print("Invalid rounds value. Must be a number between 1 and 5.")
                     print()
                     
             elif command == "stats":

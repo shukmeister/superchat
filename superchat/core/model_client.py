@@ -22,6 +22,7 @@ except ImportError:
     def load_dotenv():
         pass
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+from superchat.utils.api_key_wizard import run_api_key_wizard
 
 
 class ModelClientManager:
@@ -48,39 +49,21 @@ class ModelClientManager:
         # Load from .env file if it exists
         load_dotenv()
         self.api_key = os.getenv('OPENROUTER_API_KEY')
-        
-        if not self.api_key:
-            # Try local config file as fallback
-            config_file = Path.home() / '.superchat' / 'config'
-            if config_file.exists():
-                try:
-                    with open(config_file, 'r') as f:
-                        for line in f:
-                            line = line.strip()
-                            if line.startswith('OPENROUTER_API_KEY='):
-                                self.api_key = line.split('=', 1)[1].strip('"\'')
-                                break
-                except Exception:
-                    pass
+    
     
     # Validate that API key is properly configured
     def validate_setup(self):
-        """Validate that API key is available."""
+        """Validate that API key is available, with interactive setup wizard."""
         if not self.api_key:
-            print("OpenRouter API key not found. Set it up using one of these methods:")
-            print()
-            print("1. Create .env file in project root:")
-            print("   OPENROUTER_API_KEY=your_key_here")
-            print()
-            print("2. Environment variable:")
-            print("   export OPENROUTER_API_KEY=your_key_here")
-            print()
-            print("3. Local config file:")
-            print(f"   Create: {Path.home()}/.superchat/config")
-            print("   Add: OPENROUTER_API_KEY=your_key_here")
-            print()
-            print("Get your key from: https://openrouter.ai/keys")
-            return False
+            # Run the API key wizard
+            api_key = run_api_key_wizard()
+            if api_key:
+                # Update our instance with the new key
+                self.api_key = api_key
+                return True
+            else:
+                return False
+        
         return True
     
     # Get list of all configured model names
@@ -96,6 +79,26 @@ class ModelClientManager:
         if not self.models_config or model_name not in self.models_config["models"]:
             return None
         return self.models_config["models"][model_name]
+    
+    # Get the display label for a specific model (for chat)
+    def get_model_label(self, model_name):
+        """Get the display label for a specific model."""
+        model_config = self.get_model_config(model_name)
+        if model_config and "label" in model_config:
+            return model_config["label"]
+        # Fallback to model field or model name if label not found
+        if model_config and "model" in model_config:
+            return model_config["model"]
+        return model_name
+    
+    # Get the display name for setup/configuration (detailed name)
+    def get_model_display_name(self, model_name):
+        """Get the detailed display name for setup/configuration screens."""
+        model_config = self.get_model_config(model_name)
+        if model_config:
+            from superchat.utils.model_resolver import get_display_name
+            return get_display_name(model_config)
+        return model_name
     
     # Create AutoGen client for communicating with a specific model
     def create_model_client(self, model_name, skip_validation=False):
