@@ -24,16 +24,20 @@ class MessageHandler:
         agent = self.agents[agent_index]
         model_name = self.config.models[agent_index]
         debug_logger = get_debug_logger()
-        
-        # Create new message for agent (agent maintains its own conversation history)  
+
+        # Create new message for agent (agent maintains its own conversation history)
         new_message = TextMessage(content=message, source="user")
-        
-        # Debug: Log full context before API call
+
+        # Debug: Estimate token usage before API call
+        estimated_tokens = None
         if debug_logger.enabled:
             # Get agent mapping info for debugging
             agent_mapping_info = self.agent_model_mapping.get(agent.name, {})
             await debug_logger.log_full_context(agent, message, agent_mapping_info)
-        
+
+            # Estimate tokens for this request
+            estimated_tokens = await debug_logger.estimate_request_tokens(agent, message)
+
         # Get agent response with loading indicator
         with Halo(text="Processing", spinner="dots"):
             try:
@@ -42,25 +46,25 @@ class MessageHandler:
                 if self._handle_openrouter_error(e):
                     return None
                 raise
-        
+
         # Track token usage for stats
         usage_data = extract_usage_from_task_result(task_result)
         if usage_data:
             self.config.add_usage_data(usage_data)
-        
+
         # Extract the actual response text
         response_content = self._get_response_from_task_result(task_result)
-        
+
         # Display response with proper model identifier and formatting
         # Get unique identifier for this model
         model_index = self.config.models.index(model_name) if model_name in self.config.models else 0
         identifier = get_model_identifier(model_index)
         agent_header = self._format_agent_display(identifier, model_name)
         print(f"{agent_header}\n> {response_content}\n")
-        
-        # Debug: Log response with comprehensive breakdown after displaying response
-        if debug_logger.enabled:
-            debug_logger.log_response_with_breakdown(response_content, usage_data, task_result)
+
+        # Debug: Display token analysis (estimated vs actual)
+        if debug_logger.enabled and estimated_tokens:
+            debug_logger.display_token_comparison(estimated_tokens, usage_data)
             
         # Return transcript exchange data for staged flow capture
         return {
@@ -76,17 +80,23 @@ class MessageHandler:
         """Send message to a team and handle response formatting."""
         if not team:
             raise RuntimeError("Team not provided")
-        
+
         debug_logger = get_debug_logger()
-        
+
         try:
-            # Debug: Log multi-agent team context (could log each agent individually if needed)
+            # Debug: Log multi-agent team context and estimate tokens
+            team_estimates = None
             if debug_logger.enabled:
                 debug_logger._log_separator("MULTI-AGENT TEAM DEBUG")
                 print(f"Team Size: {len(self.agents)} agents")
                 print(f"Message: {message}")
+
+                # Estimate tokens for all agents in team
+                if self.agents:
+                    team_estimates = await debug_logger.estimate_team_request_tokens(self.agents, message)
+
                 debug_logger._log_separator_end()
-            
+
             # Send message to team with loading indicator
             with Halo(text="Processing", spinner="dots"):
                 try:
@@ -95,29 +105,22 @@ class MessageHandler:
                     if self._handle_openrouter_error(e):
                         return None
                     raise
-            
+
             # Track token usage from all agents in this conversation
             usage_data = extract_usage_from_task_result(task_result)
             if usage_data:
                 self.config.add_usage_data(usage_data)
-            
+
             # Process and display agent responses (filter out user message echoes)
             for msg in task_result.messages:
                 # Only display actual agent responses, not user message echoes
                 if hasattr(msg, 'source') and msg.source != "user":
                     self._format_and_display_agent_response(msg)
-            
-            # Debug: Log comprehensive multi-agent response breakdown after displaying responses
+
+            # Debug: Display token analysis for multi-agent team
             if debug_logger.enabled:
-                all_responses = []
-                for msg in task_result.messages:
-                    if hasattr(msg, 'source') and msg.source != "user":
-                        content = getattr(msg, 'content', str(msg))
-                        agent_name = getattr(msg, 'source', 'agent')
-                        all_responses.append(f"[{agent_name}]: {content}")
-                
-                combined_response = "\n".join(all_responses)
-                debug_logger.log_response_with_breakdown(combined_response, usage_data, task_result)
+                if team_estimates:
+                    debug_logger.display_team_token_comparison(team_estimates, usage_data, self.agent_model_mapping)
                 
             return task_result
                 
