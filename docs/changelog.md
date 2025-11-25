@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.11] - 2025-11-25
+- Updated `gemini-2.5-pro` to `gemini-3-pro-preview`
+
 ## [0.10] - 2025-08-12
 - Added interactive API key setup wizard for seamless onboarding
 - Added graceful error handling for OpenRouter credits errors
