@@ -26,9 +26,20 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 from superchat.utils.api_key_wizard import run_api_key_wizard
 
 
-# Injects OpenRouter's data_collection:deny into every POST request body so
-# only privacy-compliant providers are used. AutoGen doesn't expose extra_body
-# as a passthrough, so this transport-level injection is the only clean hook.
+# Privacy preferences injected into every OpenRouter POST request.
+# - data_collection:deny  — only route to providers that don't train on prompts
+# - zdr:true              — only route to zero-data-retention endpoints
+# - allow_fallbacks:false — never silently reroute to a less-private fallback
+#
+# AutoGen doesn't expose extra_body as a passthrough, so transport-level
+# injection is the only clean hook.
+_PROVIDER_PREFS = {
+    "data_collection": "deny",
+    "zdr": True,
+    "allow_fallbacks": False,
+}
+
+
 class _PrivacyTransport(httpx.AsyncBaseTransport):
     def __init__(self):
         self._inner = httpx.AsyncHTTPTransport()
@@ -37,8 +48,10 @@ class _PrivacyTransport(httpx.AsyncBaseTransport):
         if request.method == "POST" and request.content:
             try:
                 body = json.loads(request.content)
-                if isinstance(body, dict) and "provider" not in body:
-                    body["provider"] = {"data_collection": "deny"}
+                if isinstance(body, dict):
+                    provider = body.setdefault("provider", {})
+                    for k, v in _PROVIDER_PREFS.items():
+                        provider.setdefault(k, v)
                     new_content = json.dumps(body).encode("utf-8")
                     headers = [
                         (k, v) for k, v in request.headers.items()

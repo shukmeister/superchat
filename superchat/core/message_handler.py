@@ -179,24 +179,43 @@ class MessageHandler:
     
     # Handle OpenRouter-specific errors gracefully
     def _handle_openrouter_error(self, error):
-        """Handle OpenRouter credits/quota errors. Returns True if handled, False otherwise."""
+        """Handle known OpenRouter errors. Returns True if handled, False otherwise."""
         if self._is_openrouter_quota_error(error):
             print("\nOpenRouter Credits Error: Insufficient credits to complete this request.")
             print("Add credits at: https://openrouter.ai/credits")
             print()
             return True
+        if self._is_no_compliant_provider_error(error):
+            print("\nNo available provider met the privacy requirements for this request.")
+            print("This can happen during provider outages. Try again in a moment.")
+            print()
+            return True
         return False
-    
+
     # Check if error is related to OpenRouter credits/quota
     def _is_openrouter_quota_error(self, error):
         """Check if the error is related to OpenRouter credits or quota limits."""
         error_str = str(error).lower()
-        # Check for common OpenRouter quota/credits error indicators
         return any(indicator in error_str for indicator in [
             "can only afford",
-            "insufficient credits", 
+            "insufficient credits",
             "quota exceeded",
-            "402",  # HTTP status code for payment required
+            "402",
             "credit limit",
             "balance"
+        ])
+
+    # Check if error is due to no privacy-compliant provider being available
+    def _is_no_compliant_provider_error(self, error):
+        """Check if the error is due to no provider meeting zdr/data_collection requirements."""
+        error_str = str(error).lower()
+        return any(indicator in error_str for indicator in [
+            "no providers",
+            "no available",
+            "provider unavailable",
+            "503",
+            "all providers",
+            "data retention",
+            "data_collection",
+            "zdr",
         ])
