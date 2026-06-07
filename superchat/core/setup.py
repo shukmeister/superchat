@@ -1,5 +1,7 @@
 # Complete chat session setup and component initialization utilities
 
+import re
+import warnings
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_core.model_context import BufferedChatCompletionContext
@@ -8,6 +10,14 @@ from superchat.utils.identifiers import get_model_identifier
 from superchat.utils.model_resolver import get_display_name
 from superchat.utils.naming import make_safe_identifier
 from superchat.core.message_handler import MessageHandler
+
+
+# Extract the suggested versioned model ID from an AutoGen mismatch warning message
+def _parse_suggested_id(msg):
+    match = re.search(r'Resolved model mismatch: \S+ != (\S+)', msg)
+    if match:
+        return match.group(1).rstrip('.')
+    return None
 
 
 class ChatSetup:
@@ -71,31 +81,33 @@ class ChatSetup:
         agents = []
         
         for i, model_name in enumerate(models):
-            # Create model client using modern AutoGen approach
-            # Skip API key validation since it was already checked at startup
-            model_client = self.model_client_manager.create_model_client(model_name, skip_validation=True)
-            
-            # Create AutoGen assistant agent with valid Python identifier name
             safe_name = make_safe_identifier(model_name)
-            
-            # Get appropriate system prompt for single or multi-agent mode
             is_multi_agent = len(models) > 1
             system_prompt = self.get_system_prompt(model_name, i, is_multi_agent)
-            
             agent_name = f"agent_{safe_name}_{i}"
-            
-            # Scale context history: 3x participants (user + agents)
-            participants = 1 + len(models)  # user + agents
+            participants = 1 + len(models)
             buffer_size = 3 * participants
             buffered_context = BufferedChatCompletionContext(buffer_size=buffer_size)
-            
-            agent = AssistantAgent(
-                name=agent_name,
-                model_client=model_client,
-                model_context=buffered_context,
-                system_message=system_prompt
-            )
-            
+
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                model_client = self.model_client_manager.create_model_client(model_name, skip_validation=True)
+                agent = AssistantAgent(
+                    name=agent_name,
+                    model_client=model_client,
+                    model_context=buffered_context,
+                    system_message=system_prompt
+                )
+
+            for w in caught:
+                if issubclass(w.category, UserWarning) and "Resolved model mismatch" in str(w.message):
+                    label = self.model_client_manager.get_model_label(model_name)
+                    suggested = _parse_suggested_id(str(w.message))
+                    if suggested:
+                        print(f"Note: [{label}] openrouter_id is outdated. Update models.json to \"{suggested}\"")
+                    else:
+                        print(f"Note: [{label}] openrouter_id may be outdated in models.json")
+
             agents.append(agent)
         
         return agents
