@@ -21,8 +21,41 @@ try:
 except ImportError:
     def load_dotenv():
         pass
+import httpx
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from superchat.utils.api_key_wizard import run_api_key_wizard
+
+
+# Injects OpenRouter's data_collection:deny into every POST request body so
+# only privacy-compliant providers are used. AutoGen doesn't expose extra_body
+# as a passthrough, so this transport-level injection is the only clean hook.
+class _PrivacyTransport(httpx.AsyncBaseTransport):
+    def __init__(self):
+        self._inner = httpx.AsyncHTTPTransport()
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.content:
+            try:
+                body = json.loads(request.content)
+                if isinstance(body, dict) and "provider" not in body:
+                    body["provider"] = {"data_collection": "deny"}
+                    new_content = json.dumps(body).encode("utf-8")
+                    headers = [
+                        (k, v) for k, v in request.headers.items()
+                        if k.lower() != "content-length"
+                    ] + [("content-length", str(len(new_content)))]
+                    request = httpx.Request(
+                        method=request.method,
+                        url=request.url,
+                        headers=headers,
+                        content=new_content,
+                    )
+            except (json.JSONDecodeError, ValueError):
+                pass
+        return await self._inner.handle_async_request(request)
+
+    async def aclose(self):
+        await self._inner.aclose()
 
 
 class ModelClientManager:
@@ -114,6 +147,7 @@ class ModelClientManager:
             base_url="https://openrouter.ai/api/v1",
             model=model_config["openrouter_id"],
             api_key=self.api_key,
-            model_info=model_config["model_info"]
+            model_info=model_config["model_info"],
+            http_client=httpx.AsyncClient(transport=_PrivacyTransport()),
         )
     
