@@ -7,11 +7,11 @@
       "model": "K2",
       "release": "",
       "description": "The strongest open-source coding model as of July 2025. A great general-purpose LLM because of its mixture of experts (MOE) system. Performs similar to Claude 4 Sonnet and Opus.",
-      "openrouter_id": "moonshotai/kimi-k2-thinking",
+      "openrouter_id": "moonshotai/kimi-k2-0905",
       "input_cost": 0.14,
       "output_cost": 2.49,
       "context_length": 63000,
-      "creation_date": "2025-07-11",
+      "creation_date": "2025-09-05",
       "model_info": {
         "family": "moonshot",
         "vision": false,
@@ -20,18 +20,58 @@
         "structured_output": false
       }
     },
-    "deepseek-v3": {
-      "label": "V3",
+    "kimi-k2.6": {
+      "label": "K2.6",
+      "company": "Moonshot",
+      "family": "Kimi",
+      "model": "K2.6",
+      "release": "",
+      "description": "Multimodal upgrade to K2 with image input support and reasoning. Latest generation of Moonshot's K2 series.",
+      "openrouter_id": "moonshotai/kimi-k2.6",
+      "input_cost": 0.68,
+      "output_cost": 3.42,
+      "context_length": 131072,
+      "creation_date": "2026-04-01",
+      "model_info": {
+        "family": "moonshot",
+        "vision": true,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
+    },
+    "deepseek-v4-flash": {
+      "label": "V4 Flash",
       "company": "DeepSeek",
       "family": "DeepSeek",
-      "model": "V3",
-      "release": "0324",
-      "description": "Updated, stronger version of the V3 coding model. Non-reasoning for fast code output. Competitive with Claude 3.5 Sonnet",
-      "openrouter_id": "deepseek/deepseek-chat-v3-0324",
-      "input_cost": 0.25,
-      "output_cost": 0.85,
-      "context_length": 163840,
-      "creation_date": "2025-03-24",
+      "model": "V4 Flash",
+      "release": "",
+      "description": "Successor to V3. Cost-efficient non-reasoning coding and chat model. ~2x cheaper than V3 with a 1M token context window.",
+      "openrouter_id": "deepseek/deepseek-v4-flash",
+      "input_cost": 0.098,
+      "output_cost": 0.197,
+      "context_length": 1048576,
+      "creation_date": "2026-04-01",
+      "model_info": {
+        "family": "deepseek",
+        "vision": false,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
+    },
+    "deepseek-v4-pro": {
+      "label": "V4 Pro",
+      "company": "DeepSeek",
+      "family": "DeepSeek",
+      "model": "V4 Pro",
+      "release": "",
+      "description": "Large-scale MoE model with 1.6T total parameters and 49B activated. Supports reasoning (high/xhigh), coding, and long-horizon agent workflows. 1M token context.",
+      "openrouter_id": "deepseek/deepseek-v4-pro",
+      "input_cost": 0.335,
+      "output_cost": 1.72,
+      "context_length": 1048576,
+      "creation_date": "2026-04-01",
       "model_info": {
         "family": "deepseek",
         "vision": false,
@@ -60,18 +100,18 @@
         "structured_output": false
       }
     },
-    "grok-4": {
-      "label": "Grok 4",
+    "grok-4.3": {
+      "label": "Grok 4.3",
       "company": "xAI",
       "family": "Grok",
-      "model": "4",
+      "model": "4.3",
       "release": "",
       "description": "Strong reasoning, coding, and real-time web access. Has access to all posts on X.",
-      "openrouter_id": "x-ai/grok-4",
-      "input_cost": 3.0,
-      "output_cost": 15.0,
-      "context_length": 256000,
-      "creation_date": "2025-07-09",
+      "openrouter_id": "x-ai/grok-4.3",
+      "input_cost": 1.25,
+      "output_cost": 2.50,
+      "context_length": 1048576,
+      "creation_date": "2026-04-01",
       "model_info": {
         "family": "x-ai",
         "vision": false,
@@ -154,6 +194,26 @@
       "creation_date": "2026-02-19",
       "model_info": {
         "family": "google",
+        "vision": true,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
+    },
+    "mimo-v2.5": {
+      "label": "MiMo V2.5",
+      "company": "Xiaomi",
+      "family": "MiMo",
+      "model": "V2.5",
+      "release": "",
+      "description": "Native omnimodal model from Xiaomi. Pro-level agentic performance at low cost. Supports image and video understanding, reasoning, and a 1M token context window.",
+      "openrouter_id": "xiaomi/mimo-v2.5",
+      "input_cost": 0.013,
+      "output_cost": 0.279,
+      "context_length": 1048576,
+      "creation_date": "2026-04-24",
+      "model_info": {
+        "family": "xiaomi",
         "vision": true,
         "function_calling": true,
         "json_output": true,
