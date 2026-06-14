@@ -15,6 +15,8 @@ figures out what you want to do, and routes you to the right place.
 """
 
 import sys
+import warnings
+warnings.filterwarnings("ignore", message="Resolved model mismatch", category=UserWarning)
 from superchat.ui.display import setup_loop, display_banner
 from superchat.core.chat import ChatSession
 from superchat.core.setup import ChatSetup

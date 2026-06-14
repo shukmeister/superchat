@@ -207,7 +207,7 @@ class MessageHandler:
 
     # Check if error is due to no privacy-compliant provider being available
     def _is_no_compliant_provider_error(self, error):
-        """Check if the error is due to no provider meeting zdr/data_collection requirements."""
+        """Check if the error is due to no provider meeting data_collection requirements."""
         error_str = str(error).lower()
         return any(indicator in error_str for indicator in [
             "no providers",
@@ -217,5 +217,4 @@ class MessageHandler:
             "all providers",
             "data retention",
             "data_collection",
-            "zdr",
         ])

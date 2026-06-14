@@ -28,14 +28,16 @@ from superchat.utils.api_key_wizard import run_api_key_wizard
 
 # Privacy preferences injected into every OpenRouter POST request.
 # - data_collection:deny  — only route to providers that don't train on prompts
-# - zdr:true              — only route to zero-data-retention endpoints
 # - allow_fallbacks:false — never silently reroute to a less-private fallback
+#
+# zdr:true (zero data retention) was too strict — almost no providers support it
+# and it caused 404s even for privacy-respecting providers like ModelRun.
+# No-training is the right level for a personal chat app.
 #
 # AutoGen doesn't expose extra_body as a passthrough, so transport-level
 # injection is the only clean hook.
 _PROVIDER_PREFS = {
     "data_collection": "deny",
-    "zdr": True,
     "allow_fallbacks": False,
 }
 
