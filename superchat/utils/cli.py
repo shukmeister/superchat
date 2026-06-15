@@ -35,11 +35,17 @@ def create_parser():
     
     parser.add_argument(
         '--flow', '-f',
-        choices=['default', 'staged'],
+        choices=['default', 'staged', 'fusion'],
         metavar='FLOW',
-        help='Set chat flow mode: default or staged.\nExamples: -f staged, --flow default'
+        help='Set chat flow mode: default, staged, or fusion.\nExamples: -f staged, --flow fusion'
     )
-    
+
+    parser.add_argument(
+        '--fusion',
+        metavar='MODEL',
+        help='Set the synthesizer model for fusion mode (also enables fusion flow).\nExamples: --fusion gemini, --fusion "deepseek v4 pro"'
+    )
+
     parser.add_argument(
         '--rounds', '-r',
         type=int,
@@ -47,7 +53,7 @@ def create_parser():
         default=1,
         help='Set number of debate rounds for multi-agent conversations (1-5, default: 1).\nExamples: -r 3, --rounds 2'
     )
-    
+
     return parser
 
 
@@ -152,33 +158,43 @@ def should_use_cli_mode(args, resolved_models, success):
     return True
 
 
-def create_cli_config(args, resolved_models):
+def create_cli_config(args, resolved_models, model_manager=None):
     """Create session configuration directly from CLI arguments.
-    
+
     Args:
         args: Parsed command line arguments
         resolved_models: List of resolved model keys
-        
+        model_manager: ModelClientManager (required to resolve --fusion-model)
+
     Returns:
         SessionConfig: Configured session ready for chat
     """
     config = SessionConfig(debug_enabled=args.debug)
-    
+
     # Add resolved models
     for model_key in resolved_models:
         config.add_model(model_key)
-    
+
     # Set voice mode if specified
     if args.voice:
         config.set_voice_enabled(True)
-    
+
     # Set chat flow if specified
     if args.flow:
         config.set_chat_flow(args.flow)
-    
+
+    # Resolve the fusion synthesizer model; setting it also enables fusion flow
+    if getattr(args, 'fusion', None) and model_manager is not None:
+        result = resolve_model_from_input(args.fusion, model_manager.models_config)
+        if result.action_type == "selected":
+            config.set_fusion_model(result.model_key)
+            config.set_chat_flow("fusion")
+        else:
+            print(f"Could not resolve fusion model '{args.fusion}': {result.message}")
+
     # Set debate rounds if specified and valid
     if args.rounds:
         if not config.set_debate_rounds(args.rounds):
             print(f"Warning: Invalid rounds value {args.rounds}. Using default of 1.")
-    
+
     return config

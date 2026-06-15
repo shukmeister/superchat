@@ -20,12 +20,14 @@ from superchat.utils.stats import display_stats, display_exit_summary
 class ChatCommandHandler:
     """Handles all chat commands in a focused, testable way."""
     
-    def __init__(self, config, staged_flow_manager, model_client_manager, chat_session=None):
+    def __init__(self, config, staged_flow_manager, model_client_manager, chat_session=None,
+                 fusion_flow_manager=None):
         """Initialize command handler with required dependencies."""
         self.config = config
         self.staged_flow_manager = staged_flow_manager
         self.model_client_manager = model_client_manager
         self.chat_session = chat_session
+        self.fusion_flow_manager = fusion_flow_manager
     
     async def handle_command(self, command, args):
         """Handle a command and return (should_continue, should_exit).
@@ -43,6 +45,8 @@ class ChatCommandHandler:
             return await self._handle_exit()
         elif command == 'stats':
             return await self._handle_stats()
+        elif command == 'help':
+            return await self._handle_help()
         elif command == 'promote':
             return await self._handle_promote()
         elif command == 'boot':
@@ -66,8 +70,31 @@ class ChatCommandHandler:
         print()
         return True, False  # continue, don't exit
     
+    async def _handle_help(self):
+        """Handle /help command - context-aware command list."""
+        print()
+        print("Available commands:")
+        print("  /stats - Show session statistics")
+        print("  /help  - Show this help")
+        print("  /exit  - Exit superchat")
+        if self.fusion_flow_manager:
+            print()
+            print("Fusion mode: each message is answered by the panel in parallel, then")
+            print("compared by the judge and synthesized into a single answer.")
+        elif self.staged_flow_manager:
+            print("  /promote - Promote current agent and advance to the next (staged 1:1 phase)")
+            print("  /boot    - Drop current agent and advance (staged 1:1 phase)")
+            print("  /restart - Clear current agent's 1:1 transcript and start fresh")
+        print()
+        return True, False  # continue, don't exit
+
     async def _handle_promote(self):
         """Handle /promote command."""
+        # Not available in fusion mode
+        if self.fusion_flow_manager:
+            print("/promote is not available in fusion mode")
+            print()
+            return True, False
         # Check if promote is available
         if not (self.staged_flow_manager and self.staged_flow_manager.is_individual_phase()):
             print("/promote command is only available in staged flow individual phase")
@@ -104,6 +131,11 @@ class ChatCommandHandler:
     
     async def _handle_boot(self):
         """Handle /boot command."""
+        # Not available in fusion mode
+        if self.fusion_flow_manager:
+            print("/boot is not available in fusion mode")
+            print()
+            return True, False
         # Check if boot is available
         if not (self.staged_flow_manager and self.staged_flow_manager.is_individual_phase()):
             print("/boot command is only available in staged flow individual phase")
@@ -144,6 +176,11 @@ class ChatCommandHandler:
     
     async def _handle_restart(self):
         """Handle /restart command."""
+        # Not available in fusion mode
+        if self.fusion_flow_manager:
+            print("/restart is not available in fusion mode")
+            print()
+            return True, False
         # Check if restart is available
         if not (self.staged_flow_manager and self.staged_flow_manager.is_individual_phase()):
             print("/restart command is only available in staged flow individual phase")

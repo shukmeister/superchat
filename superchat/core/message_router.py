@@ -18,11 +18,13 @@ should process each user message based on the current context.
 class MessageRouter:
     """Routes messages to appropriate handlers based on chat mode."""
     
-    def __init__(self, config, message_handler, staged_flow_manager, is_multi_agent):
+    def __init__(self, config, message_handler, staged_flow_manager, is_multi_agent,
+                 fusion_flow_manager=None):
         """Initialize message router with required dependencies."""
         self.config = config
         self.message_handler = message_handler
         self.staged_flow_manager = staged_flow_manager
+        self.fusion_flow_manager = fusion_flow_manager
         self.is_multi_agent = is_multi_agent
         self.chat_session = None  # Will be set by ChatSession
     
@@ -37,6 +39,8 @@ class MessageRouter:
             
             if chat_mode == "single":
                 await self._handle_single_agent(message)
+            elif chat_mode == "fusion":
+                await self._handle_fusion(message)
             elif chat_mode == "staged_individual":
                 await self._handle_staged_individual(message)
             elif chat_mode == "staged_team":
@@ -53,20 +57,28 @@ class MessageRouter:
         """Detect current chat mode based on configuration and state."""
         if not self.is_multi_agent:
             return "single"
-        
+
+        # Fusion flow (only set when chat_flow == "fusion")
+        if self.fusion_flow_manager:
+            return "fusion"
+
         # Multi-agent mode - check if using staged flow
         if self.staged_flow_manager:
             if self.staged_flow_manager.is_individual_phase():
                 return "staged_individual"
             elif self.staged_flow_manager.is_team_phase():
                 return "staged_team"
-        
+
         # Default multi-agent mode
         return "default_team"
-    
+
     async def _handle_single_agent(self, message):
         """Handle single agent conversation."""
         await self.message_handler.handle_single_agent_response(message)
+
+    async def _handle_fusion(self, message):
+        """Handle fusion conversation: parallel panel + judge/synthesizer."""
+        await self.fusion_flow_manager.handle_message(message)
     
     async def _handle_staged_individual(self, message):
         """Handle staged flow individual conversation."""

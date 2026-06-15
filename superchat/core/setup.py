@@ -12,6 +12,30 @@ from superchat.utils.naming import make_safe_identifier
 from superchat.core.message_handler import MessageHandler
 
 
+# System prompt for the fusion judge: compares panel answers into structured analysis
+FUSION_JUDGE_PROMPT = """You are comparing several independent answers to the same question, each produced by a different AI model that could not see the others.
+
+Your job is to ANALYZE, not to answer. Do not write your own answer to the question. Output a structured comparison with these sections:
+
+Consensus: points that most or all models agree on. Treat these as higher-confidence.
+Contradictions: points where models directly disagree. Name which model said what, using their identifiers.
+Unique insights: notable points raised by only one model.
+Blind spots: important aspects of the question that none of the models addressed.
+
+Be specific and cite the model identifiers (e.g. [д], [ф]). Do not merge or soften disagreements - surface them plainly. Be concise. No bold, italics, or emojis."""
+
+
+# System prompt for the fusion synthesizer: writes the final answer from the analysis
+FUSION_SYNTHESIS_PROMPT = """You write the single best answer to the user's question, grounded in a structured analysis of several models' independent answers.
+
+Guidelines:
+- Weight consensus points as higher-confidence.
+- Where models contradicted each other, reason about which is actually correct rather than averaging or hedging.
+- Incorporate unique insights and address blind spots the analysis flagged.
+- Write a direct, self-contained answer to the question - do not narrate the analysis process or refer to "the models" unless it genuinely helps.
+- Be concise and accurate. Say "I don't know" rather than guessing. No bold, italics, or emojis."""
+
+
 # Extract the suggested versioned model ID from an AutoGen mismatch warning message
 def _parse_suggested_id(msg):
     match = re.search(r'Resolved model mismatch: \S+ != (\S+)', msg)
@@ -30,28 +54,32 @@ class ChatSetup:
     
     # Initialize complete chat session with all components ready for runtime
     def setup_complete_session(self):
-        """Returns fully configured MessageHandler and components for staged flow."""
+        """Returns fully configured MessageHandler and components for the active flow."""
         if not self.config.models:
             raise ValueError("At least one model required for chat session")
-        
+
+        # Fusion flow has its own (non-team) construction path
+        if self.config.is_fusion_flow():
+            return self._setup_fusion_session()
+
         # Create agents and mapping
         agents = self.create_agents(self.config.models)
         agent_mapping = self.build_agent_mapping(agents, self.config.models)
-        
+
         # Set up team for multi-agent mode
         is_multi_agent = len(self.config.models) > 1
         team = self.setup_team(agents, is_multi_agent) if is_multi_agent else None
-        
+
         # Initialize message handler with all necessary dependencies
         message_handler = MessageHandler(
-            self.config, 
-            agents, 
-            self.model_client_manager, 
+            self.config,
+            agents,
+            self.model_client_manager,
             agent_mapping
         )
         # Pass the team reference to message handler for multi-agent mode
         message_handler.team = team
-        
+
         # Return message handler and additional components for staged flow setup
         return {
             'message_handler': message_handler,
@@ -59,6 +87,71 @@ class ChatSetup:
             'agent_mapping': agent_mapping,
             'team': team
         }
+
+    # Initialize fusion session: blind panel agents + a judge/synthesizer pair (no team)
+    def _setup_fusion_session(self):
+        """Returns components for fusion flow: blind panel + judge_agent + synth_agent."""
+        # Panel members answer independently, so they get the single-agent (non-collaborative) prompt
+        panel_agents = self.create_agents(self.config.models, force_single_prompt=True)
+        agent_mapping = self.build_agent_mapping(panel_agents, self.config.models)
+
+        message_handler = MessageHandler(
+            self.config,
+            panel_agents,
+            self.model_client_manager,
+            agent_mapping
+        )
+        # No RoundRobinGroupChat team in fusion mode
+        message_handler.team = None
+
+        judge_agent, synth_agent = self.create_fusion_synthesizer_agents(self.config.fusion_model)
+
+        return {
+            'message_handler': message_handler,
+            'agents': panel_agents,
+            'agent_mapping': agent_mapping,
+            'team': None,
+            'judge_agent': judge_agent,
+            'synth_agent': synth_agent
+        }
+
+    # Create the judge and synthesizer agents from a single fusion model
+    def create_fusion_synthesizer_agents(self, fusion_model):
+        """Build two agents (judge + synthesizer) backed by the same fusion model.
+
+        They are reset per turn by FusionFlowManager, so cross-turn memory is
+        controlled explicitly rather than via their model context.
+        """
+        if not fusion_model:
+            raise ValueError("Fusion flow requires a synthesizer model (config.fusion_model)")
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            judge_client = self.model_client_manager.create_model_client(fusion_model, skip_validation=True)
+            synth_client = self.model_client_manager.create_model_client(fusion_model, skip_validation=True)
+
+        for w in caught:
+            if issubclass(w.category, UserWarning) and "Resolved model mismatch" in str(w.message):
+                label = self.model_client_manager.get_model_label(fusion_model)
+                suggested = _parse_suggested_id(str(w.message))
+                if suggested:
+                    print(f"Note: [{label}] openrouter_id is outdated. Update models.json to \"{suggested}\"")
+                else:
+                    print(f"Note: [{label}] openrouter_id may be outdated in models.json")
+
+        judge_agent = AssistantAgent(
+            name="fusion_judge",
+            model_client=judge_client,
+            model_context=BufferedChatCompletionContext(buffer_size=10),
+            system_message=FUSION_JUDGE_PROMPT
+        )
+        synth_agent = AssistantAgent(
+            name="fusion_synthesizer",
+            model_client=synth_client,
+            model_context=BufferedChatCompletionContext(buffer_size=10),
+            system_message=FUSION_SYNTHESIS_PROMPT
+        )
+        return judge_agent, synth_agent
     
     # Initialize all chat components and return them as a structured result (legacy method)
     def initialize_chat_components(self):
@@ -77,12 +170,13 @@ class ChatSetup:
         return agents, agent_mapping, team
     
     # Create AutoGen agents for the provided models
-    def create_agents(self, models):
+    def create_agents(self, models, force_single_prompt=False):
         agents = []
-        
+
         for i, model_name in enumerate(models):
             safe_name = make_safe_identifier(model_name)
-            is_multi_agent = len(models) > 1
+            # Fusion panel members answer blind, so force the single-agent prompt even with >1 model
+            is_multi_agent = len(models) > 1 and not force_single_prompt
             system_prompt = self.get_system_prompt(model_name, i, is_multi_agent)
             agent_name = f"agent_{safe_name}_{i}"
             participants = 1 + len(models)

@@ -27,8 +27,9 @@ class SessionConfig:
         self.session_active = False
         self.current_model = None
         self.debug_enabled = debug_enabled
-        self.chat_flow = "default"  # "default" (immediate team) or "staged" (staged chat)
+        self.chat_flow = "default"  # "default" (immediate team), "staged" (staged chat), or "fusion"
         self.debate_rounds = 1  # Number of rounds for multi-agent debates (default: 1)
+        self.fusion_model = None  # Synthesizer model (judge + synthesizer) for fusion flow
         
         # Token tracking
         self.session_start_time = None
@@ -71,21 +72,51 @@ class SessionConfig:
     
     # Configure chat flow setting
     def set_chat_flow(self, flow):
-        """Set chat flow mode: 'default' or 'staged'."""
-        if flow in ["default", "staged"]:
+        """Set chat flow mode: 'default', 'staged', or 'fusion'."""
+        if flow in ["default", "staged", "fusion"]:
             self.chat_flow = flow
             return True
         return False
-    
+
     # Get current chat flow setting
     def get_chat_flow(self):
         """Get current chat flow mode."""
         return self.chat_flow
-    
+
     # Check if using staged flow
     def is_staged_flow(self):
         """Check if session is using staged chat flow."""
         return self.chat_flow == "staged"
+
+    # Check if using fusion flow
+    def is_fusion_flow(self):
+        """Check if session is using fusion chat flow."""
+        return self.chat_flow == "fusion"
+
+    # Set the synthesizer model used for fusion flow (judge + synthesizer)
+    def set_fusion_model(self, model_key):
+        """Set the fusion synthesizer model."""
+        self.fusion_model = model_key
+        return True
+
+    # Get the synthesizer model used for fusion flow
+    def get_fusion_model(self):
+        """Get the fusion synthesizer model."""
+        return self.fusion_model
+
+    # Validate that fusion flow is correctly configured
+    def validate_fusion(self):
+        """Check fusion config: >=2 panel models + 1 synthesizer distinct from the panel.
+
+        Returns (ok, error_message). error_message is None when ok is True.
+        """
+        if len(self.models) < 2:
+            return False, "Fusion mode requires at least 2 panel models (use /model)"
+        if not self.fusion_model:
+            return False, "Fusion mode requires a synthesizer model (use /fusion <name>)"
+        if self.fusion_model in self.models:
+            return False, "Fusion synthesizer must be different from the panel models"
+        return True, None
     
     # Configure debate rounds setting
     def set_debate_rounds(self, rounds):
@@ -157,7 +188,8 @@ class SessionConfig:
             'current_model': self.current_model,
             'debug': self.debug_enabled,
             'chat_flow': self.chat_flow,
-            'debate_rounds': self.debate_rounds
+            'debate_rounds': self.debate_rounds,
+            'fusion_model': self.fusion_model
         }
     
     # Check if session has required configuration to start

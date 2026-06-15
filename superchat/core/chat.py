@@ -24,6 +24,7 @@ from superchat.utils.parser import parse_input
 from superchat.utils.identifiers import get_model_identifier
 from superchat.core.setup import ChatSetup
 from superchat.core.staged_flow import StagedFlowManager
+from superchat.core.fusion_flow import FusionFlowManager
 from superchat.core.command_handler import ChatCommandHandler
 from superchat.core.message_router import MessageRouter
 
@@ -40,6 +41,8 @@ class ChatSession:
         self.message_handler = None
         # Staged flow manager for staged conversations
         self.staged_flow_manager = None
+        # Fusion flow manager for fusion conversations
+        self.fusion_flow_manager = None
         # Command handler for processing chat commands
         self.command_handler = None
         # Message router for routing messages to appropriate handlers
@@ -60,6 +63,19 @@ class ChatSession:
                 agent_model_mapping
             )
     
+    # Setup - Initialize fusion flow manager for multi-agent fusion conversations
+    def setup_fusion_flow_manager(self, panel_agents, judge_agent, synth_agent, agent_model_mapping):
+        """Initialize fusion flow manager with panel + judge/synthesizer agents."""
+        if self.config.is_fusion_flow() and self.is_multi_agent:
+            self.fusion_flow_manager = FusionFlowManager(
+                self.config,
+                panel_agents,
+                judge_agent,
+                synth_agent,
+                self.message_handler,
+                agent_model_mapping
+            )
+
     # Setup - Initialize command handler for processing chat commands
     def setup_command_handler(self):
         """Initialize command handler with required dependencies."""
@@ -67,15 +83,17 @@ class ChatSession:
             self.config,
             self.staged_flow_manager,
             self.model_client_manager,
-            self  # Pass reference to this ChatSession
+            self,  # Pass reference to this ChatSession
+            self.fusion_flow_manager
         )
-        
+
         # Initialize message router with required dependencies
         self.message_router = MessageRouter(
             self.config,
             self.message_handler,
             self.staged_flow_manager,
-            self.is_multi_agent
+            self.is_multi_agent,
+            self.fusion_flow_manager
         )
         # Set reference to this ChatSession for calling conversation methods
         self.message_router.set_chat_session(self)
@@ -88,7 +106,15 @@ class ChatSession:
         
         # Display session information based on flow mode and agent count
         if self.is_multi_agent:
-            if self.config.is_staged_flow():
+            if self.config.is_fusion_flow():
+                print("Starting fusion chat with panel:")
+                for i, model_name in enumerate(self.config.models):
+                    label = self.model_client_manager.get_model_label(model_name)
+                    identifier = get_model_identifier(i)
+                    print(f"  {identifier} [{label}]")
+                fusion_label = self.model_client_manager.get_model_label(self.config.get_fusion_model())
+                print(f"  Synthesizer: [{fusion_label}]")
+            elif self.config.is_staged_flow():
                 print("Starting staged chat with:")
                 for i, model_name in enumerate(self.config.models):
                     label = self.model_client_manager.get_model_label(model_name)

@@ -35,24 +35,33 @@ def display_banner():
 
 
 
-def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
+def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None, initial_fusion_model=None):
     """Main setup loop for configuring chat parameters."""
     display_banner()
-    
+
     # Initialize debug logger with CLI flag
     from superchat.utils.debug import initialize_debug_logger
     initialize_debug_logger(debug_enabled)
-    
+
     # Initialize session config and model client manager
     config = SessionConfig(debug_enabled=debug_enabled)
-    
+
     # Apply initial CLI arguments
     if initial_flow:
         config.set_chat_flow(initial_flow)
     if initial_rounds and initial_rounds != 1:
         config.set_debate_rounds(initial_rounds)
     model_manager = ModelClientManager()
-    
+
+    # Resolve an initial fusion synthesizer model passed via CLI (also enables fusion flow)
+    if initial_fusion_model:
+        result = resolve_model_from_input(initial_fusion_model, model_manager.models_config)
+        if result.action_type == "selected":
+            config.set_fusion_model(result.model_key)
+            config.set_chat_flow("fusion")
+        else:
+            print(f"Could not resolve fusion model '{initial_fusion_model}': {result.message}\n")
+
     # Check for API key on startup
     if not model_manager.validate_setup():
         print()
@@ -95,6 +104,14 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                     print("Please select at least one model first using /model")
                     print()
                     continue
+                # Fusion mode needs >=2 panel models and a distinct synthesizer
+                if config.is_fusion_flow():
+                    ok, error = config.validate_fusion()
+                    if not ok:
+                        print()
+                        print(error)
+                        print()
+                        continue
                 print()  # Add line break after /start command
                 config.start_session()
                 return config
@@ -107,7 +124,8 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                 print("  /remove <name> - Remove a model from the chat")
                 print("  /list - Show available models")
                 print("  /status - Show current configuration")
-                print("  /flow <default|staged> - Set chat flow mode")
+                print("  /flow <default|staged|fusion> - Set chat flow mode")
+                print("  /fusion <name> - Set fusion synthesizer model (enables fusion flow)")
                 print("  /rounds <1-5> - Set number of debate rounds for multi-agent conversations")
                 print("  /debug - Toggle debug mode for detailed message/token tracking")
                 print("  /start - Begin the chat session")
@@ -118,10 +136,16 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                 print("  /model v3, flash lite, k2")
                 print("  /model deepseek")
                 print("  /flow staged")
+                print("  /fusion gemini")
                 print("  /rounds 3")
+                print()
+                print("Fusion mode: the panel models answer in parallel, then the synthesizer")
+                print("judges and combines their answers into one. Needs >=2 panel models plus")
+                print("a synthesizer model that is not one of the panel models.")
                 print()
                 print("Chat commands (available after /start):")
                 print("  /stats - Show session statistics")
+                print("  /help - Show available commands")
                 print("  /exit - Exit superchat")
                 print()
                 print("CLI shortcuts (skip setup entirely):")
@@ -129,6 +153,7 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                 print("  superchat -m \"lite,k2\"            # Comma-separated models")
                 print("  superchat -m lite -m k2           # Multiple -m flags")
                 print("  superchat --flow staged -m k2     # Set flow and models")
+                print("  superchat -m k2 deepseek --fusion gemini   # Fusion mode")
                 print()
                 
             elif command == "list":
@@ -184,7 +209,15 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                 
                 # Show chat flow mode
                 print(f"- Chat flow: {config.get_chat_flow()}")
-                
+
+                # Show fusion synthesizer when in fusion mode
+                if config.is_fusion_flow():
+                    if config.get_fusion_model():
+                        synth_name = model_manager.get_model_display_name(config.get_fusion_model())
+                        print(f"- Fusion synthesizer: {synth_name}")
+                    else:
+                        print("- Fusion synthesizer: not set (use /fusion <name>)")
+
                 # Show debate rounds
                 print(f"- Debate rounds: {config.get_debate_rounds()}")
                 
@@ -340,22 +373,22 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
             elif command == "flow":
                 if len(args) < 1:
                     print()
-                    print("Usage: /flow <default|staged>")
+                    print("Usage: /flow <default|staged|fusion>")
                     print("  default - Default chat flow")
                     print("  staged  - Staged chat flow")
+                    print("  fusion  - Fusion chat flow (set synthesizer with /fusion <name>)")
                     print()
                     print(f"Current flow: {config.get_chat_flow()}")
                     print()
                     continue
-                
+
                 flow_type = args[0].lower()
-                if flow_type in ["default", "staged"]:
+                if flow_type in ["default", "staged", "fusion"]:
                     if config.set_chat_flow(flow_type):
                         print()
-                        if flow_type == "default":
-                            print("Chat flow: default")
-                        else:
-                            print("Chat flow: staged")
+                        print(f"Chat flow: {flow_type}")
+                        if flow_type == "fusion" and not config.get_fusion_model():
+                            print("Set a synthesizer model with /fusion <name>")
                         print()
                     else:
                         print()
@@ -363,9 +396,45 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None):
                         print()
                 else:
                     print()
-                    print("Invalid flow type. Use 'default' or 'staged'")
+                    print("Invalid flow type. Use 'default', 'staged', or 'fusion'")
                     print("  default - Default chat flow")
                     print("  staged  - Staged chat flow")
+                    print("  fusion  - Fusion chat flow")
+                    print()
+
+            elif command == "fusion":
+                if len(args) < 1:
+                    print()
+                    print("Usage: /fusion <name>")
+                    print("  Sets the synthesizer model (judge + synthesizer) and enables fusion flow")
+                    print("  The synthesizer must be different from your panel models")
+                    print()
+                    if config.get_fusion_model():
+                        synth_name = model_manager.get_model_display_name(config.get_fusion_model())
+                        print(f"Current synthesizer: {synth_name}")
+                    print()
+                    continue
+
+                user_input = " ".join(args)
+                result = resolve_model_from_input(user_input, model_manager.models_config)
+
+                if result.action_type == "selected":
+                    config.set_fusion_model(result.model_key)
+                    config.set_chat_flow("fusion")
+                    print()
+                    synth_name = model_manager.get_model_display_name(result.model_key)
+                    print(f"Fusion synthesizer: {synth_name}")
+                    print("Chat flow: fusion")
+                    print()
+                elif result.action_type == "suggest":
+                    print()
+                    print(result.message)
+                    print()
+                else:  # not_found
+                    print()
+                    print(result.message)
+                    available_models_list = get_available_models_list(model_manager)
+                    print(f"Available models: {available_models_list}")
                     print()
                     
             elif command == "rounds":

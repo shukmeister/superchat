@@ -52,12 +52,16 @@ def main():
                 from superchat.utils.debug import initialize_debug_logger
                 initialize_debug_logger(args.debug)
             
-            config = create_cli_config(args, resolved_models)
+            config = create_cli_config(args, resolved_models, model_manager)
             if args.voice:
                 print("Voice mode enabled")
             if args.debug:
                 print("Debug mode enabled")
-            if args.flow:
+            if config.is_fusion_flow():
+                print("Chat flow: fusion")
+                if config.get_fusion_model():
+                    print(f"Synthesizer: {model_manager.get_model_label(config.get_fusion_model())}")
+            elif args.flow:
                 print(f"Chat flow: {args.flow}")
         else:
             # CLI mode failed - show errors and fall back to setup mode
@@ -65,13 +69,22 @@ def main():
             for error in errors:
                 print(f"  {error}")
             print("\nEntering interactive setup mode...\n")
-            config = setup_loop(debug_enabled=args.debug, initial_flow=args.flow, initial_rounds=args.rounds)
+            config = setup_loop(debug_enabled=args.debug, initial_flow=args.flow,
+                                initial_rounds=args.rounds, initial_fusion_model=args.fusion)
     else:
         # No CLI args - use normal setup loop, but pass CLI arguments if specified
-        config = setup_loop(debug_enabled=args.debug, initial_flow=args.flow, initial_rounds=args.rounds)
-    
+        config = setup_loop(debug_enabled=args.debug, initial_flow=args.flow,
+                            initial_rounds=args.rounds, initial_fusion_model=args.fusion)
+
     if config is None:
         return 0
+
+    # Validate fusion configuration before starting (catches CLI misconfiguration)
+    if config.is_fusion_flow():
+        ok, error = config.validate_fusion()
+        if not ok:
+            print(f"\n{error}\n")
+            return 1
     
     # Start the session timer
     config.start_session()
@@ -86,7 +99,15 @@ def main():
     
     # Set up staged flow manager if needed
     chat_session.setup_staged_flow_manager(setup_result['agents'], setup_result['agent_mapping'])
-    
+
+    # Set up fusion flow manager if needed
+    chat_session.setup_fusion_flow_manager(
+        setup_result['agents'],
+        setup_result.get('judge_agent'),
+        setup_result.get('synth_agent'),
+        setup_result['agent_mapping']
+    )
+
     # Set up command handler
     chat_session.setup_command_handler()
     
