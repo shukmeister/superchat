@@ -53,10 +53,13 @@ class FusionFlowManager:
     # Run the full fusion pipeline for one user message
     async def handle_message(self, message):
         """Fan out to the panel, judge the answers, synthesize the final answer."""
-        usage_results = []
+        # Track panel and synthesizer (judge + synth) usage separately so each is
+        # priced at the correct model's rate
+        panel_usage = []
+        synth_usage = []
 
         # 1. Panel fan-out (parallel, blind to each other)
-        panel_responses = await self._run_panel(message, usage_results)
+        panel_responses = await self._run_panel(message, panel_usage)
         if not panel_responses:
             # Every panel member failed - nothing to judge or synthesize
             return
@@ -69,7 +72,7 @@ class FusionFlowManager:
         panel_block = self._format_panel_block(panel_responses)
 
         # 2. Judge call (structured analysis). Degrades gracefully to no analysis.
-        analysis = await self._run_judge(message, panel_block, usage_results)
+        analysis = await self._run_judge(message, panel_block, synth_usage)
         if analysis:
             print("Judge analysis:")
             print(f"> {analysis}\n")
@@ -77,15 +80,15 @@ class FusionFlowManager:
             print("Judge analysis unavailable - synthesizing directly from panel answers.\n")
 
         # 3. Synthesis call (final answer)
-        fused_answer = await self._run_synthesizer(message, panel_block, analysis, usage_results)
+        fused_answer = await self._run_synthesizer(message, panel_block, analysis, synth_usage)
         if fused_answer:
             label = self.message_handler.model_client_manager.get_model_label(self.fusion_model)
             print(f"[⊕] \033[4m{label}\033[0m (fusion):")
             print(f"> {fused_answer}\n")
             self.fused_history.append({'prompt': message, 'answer': fused_answer})
 
-        # 4. Aggregate usage across panel + judge + synth into one conversation round
-        self._record_usage(usage_results)
+        # 4. Record usage: one conversation round, with synth tokens tracked separately
+        self._record_usage(panel_usage, synth_usage)
 
     # Fan the message out to all panel agents in parallel, collecting responses
     async def _run_panel(self, message, usage_results):
@@ -203,14 +206,26 @@ class FusionFlowManager:
             blocks.append(f"[{resp['identifier']}] {label}:\n{resp['text']}")
         return "\n\n".join(blocks)
 
-    # Aggregate usage across all calls and record a single conversation round
-    def _record_usage(self, usage_results):
-        """Sum usage from all panel/judge/synth calls and add one round to stats."""
-        if not usage_results:
+    # Aggregate usage and record a single conversation round
+    def _record_usage(self, panel_usage, synth_usage):
+        """Add one round to stats; track the synthesizer's portion separately for costing."""
+        all_usage = panel_usage + synth_usage
+        if not all_usage:
             return
+
+        # Totals (panel + judge + synth) count as one conversation round
+        self.config.add_usage_data(self._sum_usage(all_usage))
+
+        # Synthesizer-side tokens (judge + synth) are priced at the fusion model's rate
+        if synth_usage:
+            self.config.add_fusion_synth_usage(self._sum_usage(synth_usage))
+
+    # Sum a list of usage dicts into a single combined dict
+    def _sum_usage(self, usage_list):
+        """Combine a list of {prompt,completion,total}_tokens dicts."""
         combined = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
-        for usage in usage_results:
+        for usage in usage_list:
             combined["prompt_tokens"] += usage.get("prompt_tokens", 0)
             combined["completion_tokens"] += usage.get("completion_tokens", 0)
             combined["total_tokens"] += usage.get("total_tokens", 0)
-        self.config.add_usage_data(combined)
+        return combined

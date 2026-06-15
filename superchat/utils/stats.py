@@ -14,22 +14,44 @@ def calculate_model_cost(model_config, input_tokens, output_tokens):
 def calculate_total_cost(stats, models, model_client_manager, return_breakdown=False):
     total_cost = 0
     model_breakdown = []
-    
+
+    # In fusion mode the synthesizer (judge + synth) tokens belong to a separate model,
+    # so price them at that model's rate and exclude them from the panel pool.
+    fusion_model = stats.get('fusion_model')
+    synth_input = stats.get('fusion_synth_input_tokens', 0)
+    synth_output = stats.get('fusion_synth_output_tokens', 0)
+
+    panel_input = stats['total_input_tokens']
+    panel_output = stats['total_output_tokens']
+    if fusion_model:
+        panel_input -= synth_input
+        panel_output -= synth_output
+
     for model_name in models:
         model_config = model_client_manager.get_model_config(model_name)
         if model_config:
-            # Distribute tokens evenly across models (simplified approach)
+            # Distribute panel tokens evenly across panel models (simplified approach)
             # TODO: Track per-agent usage for more accurate cost calculation
-            input_tokens = stats['total_input_tokens'] / len(models)
-            output_tokens = stats['total_output_tokens'] / len(models)
-            
+            input_tokens = panel_input / len(models)
+            output_tokens = panel_output / len(models)
+
             model_cost = calculate_model_cost(model_config, input_tokens, output_tokens)
             total_cost += model_cost
-            
+
             if return_breakdown:
                 model = model_config.get("model", model_name)
                 model_breakdown.append((model, model_cost))
-    
+
+    # Add the fusion synthesizer's cost, priced at its own rate
+    if fusion_model and (synth_input or synth_output):
+        synth_config = model_client_manager.get_model_config(fusion_model)
+        if synth_config:
+            synth_cost = calculate_model_cost(synth_config, synth_input, synth_output)
+            total_cost += synth_cost
+            if return_breakdown:
+                model = synth_config.get("model", fusion_model)
+                model_breakdown.append((f"{model} (fusion)", synth_cost))
+
     if return_breakdown:
         return total_cost, model_breakdown
     return total_cost

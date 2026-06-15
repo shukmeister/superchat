@@ -37,6 +37,10 @@ class SessionConfig:
         self.total_output_tokens = 0
         self.total_tokens = 0
         self.conversation_rounds = 0
+        # Fusion synthesizer (judge + synthesizer) tokens, tracked separately so they
+        # can be priced at the fusion model's rate rather than the panel's
+        self.fusion_synth_input_tokens = 0
+        self.fusion_synth_output_tokens = 0
     
     # Add a model to the session configuration
     def add_model(self, model_name):
@@ -154,6 +158,16 @@ class SessionConfig:
         self.total_output_tokens += usage_data.get("completion_tokens", 0)
         self.total_tokens += usage_data.get("total_tokens", 0)
         self.conversation_rounds += 1
+
+    # Track the portion of usage attributable to the fusion synthesizer (judge + synth)
+    def add_fusion_synth_usage(self, usage_data):
+        """Add synthesizer-side token usage so it can be priced at the fusion model's rate.
+
+        These tokens are already included in the totals via add_usage_data; this only
+        records how many of them belong to the synthesizer model.
+        """
+        self.fusion_synth_input_tokens += usage_data.get("prompt_tokens", 0)
+        self.fusion_synth_output_tokens += usage_data.get("completion_tokens", 0)
     
     # Calculate how long the session has been running
     def get_session_duration(self):
@@ -175,7 +189,10 @@ class SessionConfig:
             "conversation_rounds": self.conversation_rounds,
             "total_input_tokens": self.total_input_tokens,
             "total_output_tokens": self.total_output_tokens,
-            "total_tokens": self.total_tokens
+            "total_tokens": self.total_tokens,
+            "fusion_model": self.fusion_model,
+            "fusion_synth_input_tokens": self.fusion_synth_input_tokens,
+            "fusion_synth_output_tokens": self.fusion_synth_output_tokens
         }
     
     # Export configuration as dictionary
