@@ -70,11 +70,12 @@ class FusionFlowManager:
             print(f"{header}\n> {resp['text']}\n")
 
         panel_block = self._format_panel_block(panel_responses)
+        fusion_label = self.message_handler.model_client_manager.get_model_label(self.fusion_model)
 
         # 2. Judge call (structured analysis). Degrades gracefully to no analysis.
         analysis = await self._run_judge(message, panel_block, synth_usage)
         if analysis:
-            print("Judge analysis:")
+            print(f"[⊕] \033[4m{fusion_label}\033[0m (judge):")
             print(f"> {analysis}\n")
         else:
             print("Judge analysis unavailable - synthesizing directly from panel answers.\n")
@@ -82,8 +83,7 @@ class FusionFlowManager:
         # 3. Synthesis call (final answer)
         fused_answer = await self._run_synthesizer(message, panel_block, analysis, synth_usage)
         if fused_answer:
-            label = self.message_handler.model_client_manager.get_model_label(self.fusion_model)
-            print(f"[⊕] \033[4m{label}\033[0m (fusion):")
+            print(f"[⊕] \033[4m{fusion_label}\033[0m (fusion):")
             print(f"> {fused_answer}\n")
             self.fused_history.append({'prompt': message, 'answer': fused_answer})
 
