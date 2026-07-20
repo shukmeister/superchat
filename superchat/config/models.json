@@ -20,6 +20,26 @@
         "structured_output": false
       }
     },
+    "kimi-k3": {
+      "label": "K3",
+      "company": "Moonshot",
+      "family": "Kimi",
+      "model": "K3",
+      "release": "",
+      "description": "2.8T parameter open-weight multimodal reasoning model. Strong at navigating large repositories, tool use, debugging, and long-horizon agentic workflows. Uses Stable LatentMoE with 896 experts (16 active).",
+      "openrouter_id": "moonshotai/kimi-k3",
+      "input_cost": 3.0,
+      "output_cost": 15.0,
+      "context_length": 1048576,
+      "creation_date": "2026-07-16",
+      "model_info": {
+        "family": "moonshot",
+        "vision": true,
+        "function_calling": true,
+        "json_output": true,
+        "structured_output": false
+      }
+    },
     "kimi-k2.6": {
       "label": "K2.6",
       "company": "Moonshot",
