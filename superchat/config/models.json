@@ -1,25 +1,5 @@
 {
   "models": {
-    "kimi-k2": {
-      "label": "K2",
-      "company": "Moonshot",
-      "family": "Kimi",
-      "model": "K2",
-      "release": "",
-      "description": "The strongest open-source coding model as of July 2025. A great general-purpose LLM because of its mixture of experts (MOE) system. Performs similar to Claude 4 Sonnet and Opus.",
-      "openrouter_id": "moonshotai/kimi-k2-0905",
-      "input_cost": 0.14,
-      "output_cost": 2.49,
-      "context_length": 63000,
-      "creation_date": "2025-09-05",
-      "model_info": {
-        "family": "moonshot",
-        "vision": false,
-        "function_calling": true,
-        "json_output": true,
-        "structured_output": false
-      }
-    },
     "kimi-k3": {
       "label": "K3",
       "company": "Moonshot",
@@ -28,8 +8,8 @@
       "release": "",
       "description": "2.8T parameter open-weight multimodal reasoning model. Strong at navigating large repositories, tool use, debugging, and long-horizon agentic workflows. Uses Stable LatentMoE with 896 experts (16 active).",
       "openrouter_id": "moonshotai/kimi-k3",
-      "input_cost": 3.0,
-      "output_cost": 15.0,
+      "input_cost": 0.3537,
+      "output_cost": 10.0,
       "context_length": 1048576,
       "creation_date": "2026-07-16",
       "model_info": {
@@ -37,67 +17,47 @@
         "vision": true,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
-    "kimi-k2.6": {
-      "label": "K2.6",
-      "company": "Moonshot",
-      "family": "Kimi",
-      "model": "K2.6",
+    "deepseek-v4.1-flash": {
+      "label": "V4.1 Flash",
+      "company": "DeepSeek",
+      "family": "DeepSeek",
+      "model": "V4.1 Flash",
       "release": "",
-      "description": "Multimodal upgrade to K2 with image input support and reasoning. Latest generation of Moonshot's K2 series.",
-      "openrouter_id": "moonshotai/kimi-k2.6",
-      "input_cost": 0.68,
-      "output_cost": 3.42,
-      "context_length": 131072,
-      "creation_date": "2026-04-01",
+      "description": "Efficient multimodal reasoning model for coding, computer-use agents, and long-context analysis. Supports native image understanding and a 1M-token context window.",
+      "openrouter_id": "deepseek/deepseek-v4.1-flash",
+      "input_cost": 0.03,
+      "output_cost": 0.5,
+      "context_length": 1048576,
+      "creation_date": "2026-09-10",
       "model_info": {
-        "family": "moonshot",
+        "family": "deepseek",
         "vision": true,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
-      }
-    },
-    "deepseek-v4-flash": {
-      "label": "V4 Flash",
-      "company": "DeepSeek",
-      "family": "DeepSeek",
-      "model": "V4 Flash",
-      "release": "",
-      "description": "Successor to V3. Cost-efficient non-reasoning coding and chat model. ~2x cheaper than V3 with a 1M token context window.",
-      "openrouter_id": "deepseek/deepseek-v4-flash",
-      "input_cost": 0.098,
-      "output_cost": 0.197,
-      "context_length": 1048576,
-      "creation_date": "2026-04-01",
-      "model_info": {
-        "family": "deepseek",
-        "vision": false,
-        "function_calling": true,
-        "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
     "deepseek-v4-pro": {
-      "label": "V4 Pro",
+      "label": "V4 Pro 0813",
       "company": "DeepSeek",
       "family": "DeepSeek",
       "model": "V4 Pro",
-      "release": "",
-      "description": "Large-scale MoE model with 1.6T total parameters and 49B activated. Supports reasoning (high/xhigh), coding, and long-horizon agent workflows. 1M token context.",
-      "openrouter_id": "deepseek/deepseek-v4-pro",
-      "input_cost": 0.335,
-      "output_cost": 1.72,
+      "release": "0813",
+      "description": "General-availability release of DeepSeek V4 Pro. Large-scale MoE model for advanced reasoning, coding, and agent workflows with a 1M-token context window.",
+      "openrouter_id": "deepseek/deepseek-v4-pro-0813",
+      "input_cost": 1.32,
+      "output_cost": 3.96,
       "context_length": 1048576,
-      "creation_date": "2026-04-01",
+      "creation_date": "2026-08-12",
       "model_info": {
         "family": "deepseek",
         "vision": false,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
     "deepseek-r1": {
@@ -108,8 +68,8 @@
       "release": "0528",
       "description": "A reasoning model that performs similarly to OpenAI's o3. It thinks before it responds.",
       "openrouter_id": "deepseek/deepseek-r1-0528",
-      "input_cost": 0.40,
-      "output_cost": 2.0,
+      "input_cost": 0.5,
+      "output_cost": 2.15,
       "context_length": 163840,
       "creation_date": "2025-05-28",
       "model_info": {
@@ -117,27 +77,27 @@
         "vision": false,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
-    "grok-4.3": {
-      "label": "Grok 4.3",
-      "company": "xAI",
+    "grok-4.7": {
+      "label": "Grok 4.7",
+      "company": "SpaceXAI",
       "family": "Grok",
-      "model": "4.3",
+      "model": "4.7",
       "release": "",
-      "description": "Strong reasoning, coding, and real-time web access. Has access to all posts on X.",
-      "openrouter_id": "x-ai/grok-4.3",
-      "input_cost": 1.25,
-      "output_cost": 2.50,
-      "context_length": 1048576,
-      "creation_date": "2026-04-01",
+      "description": "Flagship reasoning model for coding, agentic tasks, and knowledge work. Supports image and file inputs with a 500K-token context window.",
+      "openrouter_id": "x-ai/grok-4.7",
+      "input_cost": 2.0,
+      "output_cost": 6.0,
+      "context_length": 500000,
+      "creation_date": "2026-09-21",
       "model_info": {
         "family": "x-ai",
-        "vision": false,
+        "vision": true,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
     "llama-4-maverick": {
@@ -148,76 +108,56 @@
       "release": "17B 128E Instruct FP8",
       "description": "The largest of Meta's Llama 4 family. Cost-effective and comparable to DeepSeek V3 at coding",
       "openrouter_id": "meta-llama/llama-4-maverick",
-      "input_cost": 0.15,
-      "output_cost": 0.60,
+      "input_cost": 0.1875,
+      "output_cost": 0.6525,
       "context_length": 1048576,
       "creation_date": "2025-04-05",
       "model_info": {
         "family": "meta-llama",
-        "vision": false,
+        "vision": true,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
-    "gemini-2.5-flash-lite": {
-      "label": "Gemini 2.5 Flash Lite",
+    "gemini-3.5-flash-lite": {
+      "label": "Gemini 3.5 Flash Lite",
       "company": "Google",
       "family": "Gemini",
-      "model": "2.5 Flash Lite",
+      "model": "3.5 Flash Lite",
       "release": "",
-      "description": "Lightweight reasoning model optimized for ultra-low latency and cost efficiency",
-      "openrouter_id": "google/gemini-2.5-flash-lite",
-      "input_cost": 0.10,
-      "output_cost": 0.40,
+      "description": "High-efficiency multimodal reasoning model with upgraded agentic capabilities, suited for focused tasks in multi-agent workflows. Supports configurable thinking levels.",
+      "openrouter_id": "google/gemini-3.5-flash-lite",
+      "input_cost": 0.3,
+      "output_cost": 2.5,
       "context_length": 1048576,
-      "creation_date": "2025-07-22",
-      "model_info": {
-        "family": "google",
-        "vision": false,
-        "function_calling": true,
-        "json_output": true,
-        "structured_output": false
-      }
-    },
-    "gemini-2.5-flash": {
-      "label": "Gemini 2.5 Flash",
-      "company": "Google",
-      "family": "Gemini",
-      "model": "2.5 Flash",
-      "release": "",
-      "description": "Google's workhorse model, designed for reasoning, coding, mathematics, and scientific tasks. Has customizable reasoning parameters",
-      "openrouter_id": "google/gemini-2.5-flash",
-      "input_cost": 0.30,
-      "output_cost": 2.50,
-      "context_length": 1048576,
-      "creation_date": "2025-06-17",
+      "creation_date": "2026-07-21",
       "model_info": {
         "family": "google",
         "vision": true,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
-    "gemini-3.5-flash": {
-      "label": "Gemini 3.5 Flash",
+    "gemini-3.8-flash": {
+      "label": "Gemini 3.8 Flash",
       "company": "Google",
       "family": "Gemini",
-      "model": "3.5 Flash",
+      "model": "3.8 Flash",
       "release": "",
-      "description": "Near-Pro level coding and reasoning at Flash-tier speed. Optimized for coding and parallel agentic execution. Supports configurable thinking levels (minimal to high). Multimodal: text, image, video, audio, PDF.",
-      "openrouter_id": "google/gemini-3.5-flash",
-      "input_cost": 0.625,
-      "output_cost": 9.08,
+      "description": "Multimodal Flash model with improved software engineering, agentic tasks, and multi-step reasoning. Supports text, images, files, audio, and video with a 1M-token context window.",
+      "openrouter_id": "google/gemini-3.8-flash",
+      "input_cost": 0.75,
+      "output_cost": 3.75,
       "context_length": 1048576,
-      "creation_date": "2026-06-01",
+      "creation_date": "2026-09-02",
       "model_info": {
         "family": "google",
         "vision": true,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
     "gemini-3.1-pro-preview": {
@@ -237,47 +177,47 @@
         "vision": true,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
-    "mimo-v2.5": {
-      "label": "MiMo V2.5",
+    "mimo-v2.6-flash": {
+      "label": "MiMo V2.6 Flash",
       "company": "Xiaomi",
       "family": "MiMo",
-      "model": "V2.5",
+      "model": "V2.6 Flash",
       "release": "",
-      "description": "Native omnimodal model from Xiaomi. Pro-level agentic performance at low cost. Supports image and video understanding, reasoning, and a 1M token context window.",
-      "openrouter_id": "xiaomi/mimo-v2.5",
-      "input_cost": 0.013,
-      "output_cost": 0.279,
-      "context_length": 1048576,
-      "creation_date": "2026-04-24",
+      "description": "Open-source multimodal MoE model from Xiaomi with 309B total parameters and 15B activated per token. Supports reasoning, images, audio, and video with a 1.05M-token context window.",
+      "openrouter_id": "xiaomi/mimo-v2.6-flash",
+      "input_cost": 0.14,
+      "output_cost": 0.28,
+      "context_length": 1050000,
+      "creation_date": "2026-09-21",
       "model_info": {
         "family": "xiaomi",
         "vision": true,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     },
-    "qwen3-coder": {
-      "label": "Qwen3 Coder",
+    "qwen3-coder-next": {
+      "label": "Qwen3 Coder Next",
       "company": "Alibaba",
       "family": "Qwen",
-      "model": "Qwen3 Coder",
-      "release": "480B A35B Instruct",
-      "description": "Advanced MOE coding model optimized for agentic tasks like function calling, tool use, and long-context reasoning over repos.",
-      "openrouter_id": "qwen/qwen3-coder",
-      "input_cost": 1.0,
-      "output_cost": 5.0,
-      "context_length": 1000000,
-      "creation_date": "2025-07-23",
+      "model": "3 Coder Next",
+      "release": "80B A3B",
+      "description": "Open-weight coding model optimized for coding agents and development workflows. Sparse MoE with 80B total parameters, 3B activated per token, and a 256K-token context window.",
+      "openrouter_id": "qwen/qwen3-coder-next",
+      "input_cost": 0.12,
+      "output_cost": 0.8,
+      "context_length": 262144,
+      "creation_date": "2026-02-04",
       "model_info": {
         "family": "qwen",
         "vision": false,
         "function_calling": true,
         "json_output": true,
-        "structured_output": false
+        "structured_output": true
       }
     }
   }

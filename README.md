@@ -86,7 +86,7 @@ In default mode, all AI agents join a shared conversation immediately. Each user
 
 ```bash
 # Start default mode with multiple models
-superchat -m llama claude deepseek
+superchat -m llama k3 grok
 ```
 
 #### Staged Mode
@@ -94,7 +94,7 @@ In staged mode, you first have individual 1:1 conversations with each agent, the
 
 ```bash
 # Start staged mode with multiple models
-superchat --flow staged -m llama claude deepseek
+superchat --flow staged -m llama k3 grok
 ```
 
 **Staged Mode Commands:**
@@ -110,7 +110,7 @@ Control how many times each agent responds per user message in team debates:
 
 ```bash
 # Set debate rounds (1-5, default: 1)
-superchat -r 3 -m llama claude
+superchat -r 3 -m llama k3
 ```
 
 ## Updating

@@ -18,7 +18,7 @@ def create_parser():
         nargs='*',
         action='append',
         metavar='MODEL',
-        help='Add models to the chat.\nExamples: -m k2 lite (space-separated), -m "lite,k2" (comma-separated), -m lite -m k2 (multiple flags)'
+        help='Add models to the chat.\nExamples: -m k3 lite (space-separated), -m "lite,k3" (comma-separated), -m lite -m k3 (multiple flags)'
     )
 
     parser.add_argument(
@@ -43,7 +43,7 @@ def create_parser():
     parser.add_argument(
         '--fusion',
         metavar='MODEL',
-        help='Set the synthesizer model for fusion mode (also enables fusion flow).\nExamples: --fusion gemini, --fusion "deepseek v4 pro"'
+        help='Set the synthesizer model for fusion mode (also enables fusion flow).\nExamples: --fusion "gemini pro", --fusion "deepseek v4 pro"'
     )
 
     parser.add_argument(
@@ -68,10 +68,10 @@ def parse_model_arguments(model_args):
         List of individual model names with whitespace stripped
         
     Examples:
-        [["lite", "k2"]] -> ["lite", "k2"]                    # -m lite k2
-        [["lite,k2"]] -> ["lite", "k2"]                      # -m "lite,k2"  
-        [["lite"], ["k2"]] -> ["lite", "k2"]                 # -m lite -m k2
-        [["lite", "k2"], ["deepseek"]] -> ["lite", "k2", "deepseek"]  # -m lite k2 -m deepseek
+        [["lite", "k3"]] -> ["lite", "k3"]                    # -m lite k3
+        [["lite,k3"]] -> ["lite", "k3"]                      # -m "lite,k3"
+        [["lite"], ["k3"]] -> ["lite", "k3"]                 # -m lite -m k3
+        [["lite", "k3"], ["grok"]] -> ["lite", "k3", "grok"]  # -m lite k3 -m grok
     """
     if not model_args:
         return []

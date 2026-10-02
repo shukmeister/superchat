@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased] - 2026-10-01
+- Refreshed the model roster against [OpenRouter's live catalog](https://openrouter.ai/api/v1/models):
+  - DeepSeek V4 Flash → V4.1 Flash; V4 Pro → V4 Pro 0813 (GA).
+  - Grok 4.3 → 4.7.
+  - Gemini 2.5 Flash Lite → 3.5 Flash Lite; Gemini 3.5 Flash → 3.8 Flash.
+  - MiMo V2.5 → V2.6 Flash; Qwen3 Coder → Qwen3 Coder Next.
+- Consolidated older Kimi entries into Kimi K3 and older Gemini Flash entries into Gemini 3.8 Flash.
+- Verified Kimi K3, DeepSeek R1 0528, Llama 4 Maverick, and Gemini 3.1 Pro Preview are the latest in their respective lines.
+- Updated all model prices, catalog dates, context lengths, and capability flags from OpenRouter. Prices are catalog rates per million tokens; provider and tier-specific rates may differ.
+- Updated CLI examples to use the current model roster.
+
 ## [0.11] - 2025-11-25
 - Updated `gemini-2.5-pro` to `gemini-3-pro-preview`
 
