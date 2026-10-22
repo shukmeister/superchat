@@ -1,6 +1,15 @@
 # Changelog
 
 ## [Unreleased] - 2026-10-01
+- Added offline `superchat models` discovery with text or JSON output, accepted
+  model IDs, capability details, and catalog prices in USD per million tokens.
+- Corrected DeepSeek V4.1 Flash catalog rates to $0.30 input / $1.20 output per
+  million tokens after checking the live OpenRouter catalog on 2026-10-22.
+- Added `superchat consult` for stateless parallel panel requests with explicit
+  prompt or stdin input, JSON results, per-model usage and cost estimates,
+  configurable timeouts and output limits, and partial-failure handling.
+- Updated CLI help and documented programmatic consultations.
+- Declared the directly used `httpx` dependency for clean installations.
 - Refreshed the model roster against [OpenRouter's live catalog](https://openrouter.ai/api/v1/models):
   - DeepSeek V4 Flash → V4.1 Flash; V4 Pro → V4 Pro 0813 (GA).
   - Grok 4.3 → 4.7.

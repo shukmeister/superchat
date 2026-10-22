@@ -17,16 +17,24 @@ figures out what you want to do, and routes you to the right place.
 import sys
 import warnings
 warnings.filterwarnings("ignore", message="Resolved model mismatch", category=UserWarning)
-from superchat.ui.display import setup_loop, display_banner
-from superchat.core.chat import ChatSession
-from superchat.core.setup import ChatSetup
-from superchat.core.session import SessionConfig
-from superchat.core.model_client import ModelClientManager
-from superchat.utils.cli import create_parser, resolve_cli_models, should_use_cli_mode, create_cli_config
 from importlib.metadata import version
 
 
 def main():
+    if sys.argv[1:2] == ['models']:
+        from superchat.models import main as models_main
+        return models_main(sys.argv[2:])
+
+    if sys.argv[1:2] == ['consult']:
+        from superchat.consult import main as consult_main
+        return consult_main(sys.argv[2:])
+
+    from superchat.ui.display import setup_loop, display_banner
+    from superchat.core.chat import ChatSession
+    from superchat.core.setup import ChatSetup
+    from superchat.core.model_client import ModelClientManager
+    from superchat.utils.cli import create_parser, resolve_cli_models, should_use_cli_mode, create_cli_config
+
     parser = create_parser()
     args = parser.parse_args()
     

@@ -148,12 +148,16 @@ def setup_loop(debug_enabled=False, initial_flow=None, initial_rounds=None, init
                 print("  /help - Show available commands")
                 print("  /exit - Exit superchat")
                 print()
+                print("Staged 1:1 commands: /promote, /boot, /restart")
+                print()
                 print("CLI shortcuts (skip setup entirely):")
                 print("  superchat -m k3 lite              # Space-separated models")
                 print("  superchat -m \"lite,k3\"            # Comma-separated models")
                 print("  superchat -m lite -m k3           # Multiple -m flags")
                 print("  superchat --flow staged -m k3     # Set flow and models")
                 print("  superchat -m k3 grok --fusion \"gemini pro\"   # Fusion mode")
+                print("  superchat consult --help         # Stateless panel input for programs")
+                print("  superchat models --format json   # Model IDs and catalog costs")
                 print()
                 
             elif command == "list":

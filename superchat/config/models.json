@@ -28,8 +28,8 @@
       "release": "",
       "description": "Efficient multimodal reasoning model for coding, computer-use agents, and long-context analysis. Supports native image understanding and a 1M-token context window.",
       "openrouter_id": "deepseek/deepseek-v4.1-flash",
-      "input_cost": 0.03,
-      "output_cost": 0.5,
+      "input_cost": 0.3,
+      "output_cost": 1.2,
       "context_length": 1048576,
       "creation_date": "2026-09-10",
       "model_info": {

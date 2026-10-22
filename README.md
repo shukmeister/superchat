@@ -113,6 +113,125 @@ Control how many times each agent responds per user message in team debates:
 superchat -r 3 -m llama k3
 ```
 
+### Consult a panel from another program
+
+Discover accepted model IDs and prices before choosing a panel:
+
+```sh
+superchat models
+superchat models --format json
+```
+
+These commands work offline without an API key. JSON includes each model's key,
+OpenRouter ID, description, context length, capability flags, and separate input
+and output costs in USD per million tokens. Prices come from the bundled catalog;
+live provider availability and billing rates can differ. Use the exact `model`
+key or `openrouter_id` in `consult -m` to avoid ambiguous aliases.
+
+`consult` sends the same prompt to each selected model independently and in
+parallel, returns one JSON document, and exits. Each call is stateless: no
+conversation or prompt is saved. Include previous answers in a new prompt when
+you want a follow-up. Models do not see each other's answers or local files.
+
+```sh
+superchat consult \
+  -m k3 grok \
+  --prompt "Compare approaches A and B. Identify their main risks."
+```
+
+For longer text and code, use `--prompt -` to read UTF-8 stdin until EOF:
+
+```sh
+superchat consult -m k3 grok --prompt - <<'PROMPT'
+Review this design and identify failure modes.
+
+Constraints:
+- Existing sessions must continue working.
+- One failed model must not discard other models' answers.
+PROMPT
+```
+
+From Python, pass input directly without temporary files:
+
+```python
+import json
+import subprocess
+
+result = subprocess.run(
+    ["superchat", "consult", "-m", "k3", "grok", "--prompt", "-"],
+    input="Review this design:\n...",
+    text=True,
+    encoding="utf-8",
+    capture_output=True,
+)
+panel = json.loads(result.stdout)
+for answer in panel["results"]:
+    if answer["status"] == "success":
+        print(answer["model"], answer["answer"])
+    else:
+        print(answer["model"], answer["error"])
+```
+
+Input and configuration:
+
+- `--prompt` is required. Use text or `-`; there is no prompt-file option.
+  Stdin is read only with `--prompt -`; terminal input is rejected.
+- Input must be valid UTF-8, nonempty, and no larger than 1 MiB (1,048,576 bytes).
+- `-m` is required and accepts one or more catalog keys, OpenRouter IDs, or
+  unambiguous aliases such as `k3`. Commas and repeated `-m` flags also work.
+  Unknown, ambiguous, or duplicate selections fail before requests start.
+- Set `OPENROUTER_API_KEY` in the environment or a dotenv file before running.
+  Consult never opens the interactive API key wizard.
+- `--timeout SECONDS` limits each model request (default: 120). Timed-out requests
+  are cancelled locally; client cleanup can take up to five additional seconds.
+- `--max-output-tokens N` sets a per-model output limit. When omitted, the
+  provider default applies. A `finish_reason` of `length` indicates truncation.
+- Requests use the same provider privacy preferences as interactive chat.
+  Automatic retries are disabled.
+
+Output is JSON by default; `--format json` is also accepted. Stdout contains only
+the result document; diagnostics go to stderr. `--help` prints normal help text.
+The result has `schema_version: 1`, an overall `status` (`success`, `partial`, or
+`failed`), a `results` array in selection order, `elapsed_seconds`, and `error`.
+Top-level `error` describes input or command failures; model failures appear in
+the relevant result's `error` instead.
+
+Each model result contains:
+
+- `model`, `openrouter_id`, and `status` (`success` or `failed`).
+- `answer` and `finish_reason`, or `null` when unavailable.
+- `usage`: provider-reported `prompt_tokens`, `completion_tokens`, and
+  `total_tokens`, or `null` when unavailable.
+- `estimated_cost_usd`: cost calculated from that model's reported usage and
+  bundled catalog rates, or `null` when unavailable. Actual billing can differ.
+- `elapsed_seconds` and `error` (a `code` and `message`, or `null` on success).
+
+Exit codes:
+
+| Code | Meaning |
+|------|---------|
+| `0` | Every selected model returned a text answer |
+| `1` | All models failed, or an internal error occurred |
+| `2` | Invalid arguments, input, or configuration |
+| `3` | Some models succeeded; use the available answers |
+| `130` | Interrupted |
+
+For partial results, inspect the JSON even though the exit code is nonzero. Each
+model error identifies a `timeout`, `provider_error`, or `invalid_response`.
+
+Run `superchat consult --help` for options. The existing `superchat` and `sc`
+interactive commands remain available.
+
+## Development checks
+
+After installing the project dependencies, run the consultation tests with:
+
+```sh
+python -m unittest discover -s tests -v
+```
+
+The tests use mocked provider responses and do not require API credits.
+
 ## Updating
 
 To update to the latest version:

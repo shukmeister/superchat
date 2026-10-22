@@ -149,7 +149,7 @@ class ModelClientManager:
         return model_name
     
     # Create AutoGen client for communicating with a specific model
-    def create_model_client(self, model_name, skip_validation=False):
+    def create_model_client(self, model_name, skip_validation=False, max_retries=None):
         """Create OpenAI chat completion client for the specified model."""
         if not skip_validation and not self.validate_setup():
             raise RuntimeError("API key not configured")
@@ -158,11 +158,13 @@ class ModelClientManager:
         if not model_config:
             raise ValueError(f"Unknown model: {model_name}")
         
+        client_options = {} if max_retries is None else {"max_retries": max_retries}
         return OpenAIChatCompletionClient(
             base_url="https://openrouter.ai/api/v1",
             model=model_config["openrouter_id"],
             api_key=self.api_key,
             model_info=model_config["model_info"],
             http_client=httpx.AsyncClient(transport=_PrivacyTransport()),
+            **client_options,
         )
     

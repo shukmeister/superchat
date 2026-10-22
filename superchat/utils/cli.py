@@ -10,7 +10,8 @@ def create_parser():
     parser = argparse.ArgumentParser(
         prog='superchat',
         description='AI-driven discussions and multi-agent debates',
-        usage='superchat [-h] [-m|--model MODEL] [-d|--debug] [-v|--voice] [-f|--flow FLOW] [-r|--rounds ROUNDS]'
+        epilog='Use superchat models --format json for model IDs and catalog costs. For noninteractive panel input, use: superchat consult --help',
+        usage='superchat [interactive options]\n       superchat consult -m MODEL [MODEL ...] --prompt TEXT [options]\n       superchat models [--format text|json]'
     )
     
     parser.add_argument(
@@ -30,7 +31,7 @@ def create_parser():
     parser.add_argument(
         '--voice', '-v',
         action='store_true',
-        help='Enable voice output mode.\nExamples: -v or --voice'
+        help='Set the voice preference (audio output is not implemented yet).'
     )
     
     parser.add_argument(
@@ -51,7 +52,7 @@ def create_parser():
         type=int,
         metavar='ROUNDS',
         default=1,
-        help='Set number of debate rounds for multi-agent conversations (1-5, default: 1).\nExamples: -r 3, --rounds 2'
+        help='Set round-robin debate rounds (1-5, default: 1; does not affect fusion).\nExamples: -r 3, --rounds 2'
     )
 
     return parser
