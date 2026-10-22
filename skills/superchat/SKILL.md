@@ -4,11 +4,10 @@ description: Consult a paid, independent AI panel through OpenRouter using Super
 ---
 
 Use the SMS skill for difficulty or importance around 7–9/10, stalled progress,
-or consequential decisions needing a second opinion. Use the Superchat skill
-when explicitly requested, or propose a panel for 10/10 difficulty or importance
-where several independent perspectives would materially help. Name the models
-and purpose; get approval before paid calls. Explicit requests authorize that
-call; further calls need approval unless already covered.
+or consequential decisions needing a second opinion (free to use). Use the
+Superchat skill when explicitly requested, or propose a panel for 10/10
+difficulty or importance where several independent perspectives would materially
+help (uses paid OpenRouter calls, name the models to get approval).
 
 Use `superchat consult --help` for options and
 `superchat models --format json` for exact model IDs, capabilities, and

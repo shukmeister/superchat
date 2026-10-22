@@ -276,7 +276,8 @@ Review the consultation rules in `~/.codex/AGENTS.md` and
 `~/.claude/CLAUDE.md` together: SMS for difficulty or importance around 7–9/10,
 stalled progress, or consequential decisions needing a second opinion;
 Superchat for explicit requests or proposed 10/10 panels where several
-independent perspectives would materially help, with approval for paid calls.
+independent perspectives would materially help. SMS is free to use; Superchat
+uses paid OpenRouter calls and requires approval naming the models.
 Review after model, CLI, or policy changes;
 no automatic update is scheduled.
 
