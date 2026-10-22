@@ -1,6 +1,6 @@
 ---
 name: superchat
-description: Consult a paid AI panel through Superchat when explicitly requested or approved for 10/10 difficulty or importance. Prefer SMS for other consultation.
+description: Consult a paid, independent AI panel through OpenRouter using Superchat when explicitly requested or approved for 10/10 difficulty or importance. Prefer SMS for other consultation.
 ---
 
 Prefer the SMS skill for consultation. For 10/10 difficulty or importance, propose

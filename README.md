@@ -232,6 +232,52 @@ python -m unittest discover -s tests -v
 
 The tests use mocked provider responses and do not require API credits.
 
+## Model and skill maintenance
+
+As of **2026-10-22**, `superchat consult` has **no default panel**: each call
+must select models with `-m`. The repository's bundled catalog contains:
+
+| Catalog key | OpenRouter model ID |
+| --- | --- |
+| `kimi-k3` | `moonshotai/kimi-k3` |
+| `deepseek-v4.1-flash` | `deepseek/deepseek-v4.1-flash` |
+| `deepseek-v4-pro` | `deepseek/deepseek-v4-pro-0813` |
+| `deepseek-r1` | `deepseek/deepseek-r1-0528` |
+| `grok-4.7` | `x-ai/grok-4.7` |
+| `llama-4-maverick` | `meta-llama/llama-4-maverick` |
+| `gemini-3.5-flash-lite` | `google/gemini-3.5-flash-lite` |
+| `gemini-3.8-flash` | `google/gemini-3.8-flash` |
+| `gemini-3.1-pro-preview` | `google/gemini-3.1-pro-preview` |
+| `mimo-v2.6-flash` | `xiaomi/mimo-v2.6-flash` |
+| `qwen3-coder-next` | `qwen/qwen3-coder-next` |
+
+This is a snapshot of local configuration, not a live availability or pricing
+check. Use `superchat models --format json` to inspect the installed catalog.
+Review model IDs, capabilities, and prices periodically against OpenRouter;
+update `superchat/config/models.json`, examples, and tests when they change.
+Reconsider routinely selected panels as quality and cost change. If a default
+panel is introduced later, document its models and review date explicitly.
+
+The companion SMS tool currently defaults to Codex `gpt-6-astra` at low effort
+for Claude initiators and Claude `claude-opus-5-5` at low effort for Codex
+initiators. Those defaults may also need updating as models and CLIs change.
+
+Both **Codex and Claude Code** use the Superchat and SMS skills. Superchat's
+source is `skills/superchat/SKILL.md`; after edits, keep both its description
+and instructions identical in the installed copies:
+
+- Codex: `~/.codex/skills/superchat/SKILL.md`.
+- Claude Code: `~/.claude/skills/superchat/SKILL.md`.
+
+SMS source is `skills/sms/SKILL.md` in the SMS repository. Rebuild/install SMS
+and run `sms install-skill` to refresh both harnesses from its embedded copy.
+Periodically compare both skills with their sources and current CLI behavior.
+Review the consultation rules in `~/.codex/AGENTS.md` and
+`~/.claude/CLAUDE.md` together: SMS for roughly 8/10 difficulty or importance
+or stalled progress; Superchat for explicit requests or proposed 10/10 panels,
+with approval for paid calls. Review after model, CLI, or policy changes;
+no automatic update is scheduled.
+
 ## Updating
 
 To update to the latest version:
