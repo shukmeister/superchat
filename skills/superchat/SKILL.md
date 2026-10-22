@@ -1,12 +1,14 @@
 ---
 name: superchat
-description: Consult a paid, independent AI panel through OpenRouter using Superchat when explicitly requested or approved for 10/10 difficulty or importance. Prefer SMS for other consultation.
+description: Consult a paid, independent AI panel through OpenRouter using Superchat when explicitly requested, or propose one for 10/10 difficulty or importance where multiple perspectives would materially help. Get approval before paid calls. Prefer SMS for 7–9/10, stalled progress, or a second opinion.
 ---
 
-Prefer the SMS skill for consultation. For 10/10 difficulty or importance, propose
-a paid Superchat panel: name the models and purpose, then ask approval.
-An explicit request authorizes that call; additional calls need approval
-unless already covered.
+Use the SMS skill for difficulty or importance around 7–9/10, stalled progress,
+or consequential decisions needing a second opinion. Use the Superchat skill
+when explicitly requested, or propose a panel for 10/10 difficulty or importance
+where several independent perspectives would materially help. Name the models
+and purpose; get approval before paid calls. Explicit requests authorize that
+call; further calls need approval unless already covered.
 
 Use `superchat consult --help` for options and
 `superchat models --format json` for exact model IDs, capabilities, and

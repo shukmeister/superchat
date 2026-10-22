@@ -273,9 +273,11 @@ SMS source is `skills/sms/SKILL.md` in the SMS repository. Rebuild/install SMS
 and run `sms install-skill` to refresh both harnesses from its embedded copy.
 Periodically compare both skills with their sources and current CLI behavior.
 Review the consultation rules in `~/.codex/AGENTS.md` and
-`~/.claude/CLAUDE.md` together: SMS for roughly 8/10 difficulty or importance
-or stalled progress; Superchat for explicit requests or proposed 10/10 panels,
-with approval for paid calls. Review after model, CLI, or policy changes;
+`~/.claude/CLAUDE.md` together: SMS for difficulty or importance around 7–9/10,
+stalled progress, or consequential decisions needing a second opinion;
+Superchat for explicit requests or proposed 10/10 panels where several
+independent perspectives would materially help, with approval for paid calls.
+Review after model, CLI, or policy changes;
 no automatic update is scheduled.
 
 ## Updating
